@@ -118,7 +118,7 @@ public class Sagacity extends SimpleApplication
       // Looping efficiency variables
       int lastRoll = -1;
       int breakCounter = 0;
-      
+     
       for(int i = 0; i < rooms.length; i++)
       {
           breakCounter++; 
