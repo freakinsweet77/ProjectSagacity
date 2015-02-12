@@ -114,7 +114,7 @@ public class Sagacity extends SimpleApplication
       // Setting the row and col of the rootNode
       rootNode.setUserData("row", row);
       rootNode.setUserData("col", col);
-      
+       
       // Looping efficiency variables
       int lastRoll = -1;
       int breakCounter = 0;
