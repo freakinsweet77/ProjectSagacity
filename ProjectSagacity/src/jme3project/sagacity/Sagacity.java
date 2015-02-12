@@ -110,7 +110,7 @@ public class Sagacity extends SimpleApplication
       // Arbitrary values - user data cannot be negative, so I start with a high number
       int row = 100;
       int col = 100;
-      
+       
       // Setting the row and col of the rootNode
       rootNode.setUserData("row", row);
       rootNode.setUserData("col", col);
