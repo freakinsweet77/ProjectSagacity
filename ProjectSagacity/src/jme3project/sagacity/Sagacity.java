@@ -31,7 +31,7 @@ public class Sagacity extends SimpleApplication
   
   CollisionResults results;
   
-  private int deleteThisVariable;
+  private int deleteThisVariable = 0;
   
   private DirectionalLight sunlight;
   
