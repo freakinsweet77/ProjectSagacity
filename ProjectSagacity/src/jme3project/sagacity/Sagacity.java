@@ -24,6 +24,7 @@ public class Sagacity extends SimpleApplication
   // -------------------------- //
   private Random randomGenerator = new Random();
   
+  private int test;
   private Node camNode;
   private Node[] rooms;
   private Node currentNode = rootNode; // for debugging camera
