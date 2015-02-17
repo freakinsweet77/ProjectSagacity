@@ -15,12 +15,13 @@ import com.jme3.scene.shape.Box;
 import com.jme3.scene.Node;
 import com.jme3.scene.CameraNode;
 import com.jme3.math.Vector3f;
+import com.jme3.texture.Texture;
 import com.jme3.util.TangentBinormalGenerator;
 import java.util.Random;
 
 public class Sagacity extends SimpleApplication
 {
-  // Class variables
+  // Class variables //
   // -------------------------- //
   private Random randomGenerator = new Random();
   
@@ -294,9 +295,10 @@ public class Sagacity extends SimpleApplication
       Geometry floor = new Geometry("Floor", box);
       floor.setLocalTranslation(0f, 0f, 0f);
       TangentBinormalGenerator.generate(box);
-      Material mat1 = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-      mat1.setColor("Color", ColorRGBA.Gray);
-      floor.setMaterial(mat1);
+      Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+      Texture floorTexture = assetManager.loadTexture("Textures/FloorBlue.jpg");
+      mat.setTexture("ColorMap", floorTexture);
+      floor.setMaterial(mat);
       room.attachChild(floor);
   }
   
@@ -348,7 +350,8 @@ public class Sagacity extends SimpleApplication
       
       TangentBinormalGenerator.generate(box);
       Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-      mat.setColor("Color", ColorRGBA.randomColor());
+      Texture wallTexture = assetManager.loadTexture("Textures/BrickGrey.jpg");
+      mat.setTexture("ColorMap", wallTexture);
       
       for(int i = 0; i < wall.length - 1; i++)
       {
