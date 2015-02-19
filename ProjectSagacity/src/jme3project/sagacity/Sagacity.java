@@ -1,6 +1,9 @@
 package jme3project.sagacity;
 
 import com.jme3.app.SimpleApplication;
+import com.jme3.bullet.BulletAppState;
+import com.jme3.bullet.collision.shapes.BoxCollisionShape;
+import com.jme3.bullet.control.RigidBodyControl;
 import com.jme3.collision.CollisionResults;
 import com.jme3.input.KeyInput;
 import com.jme3.input.controls.ActionListener;
@@ -15,6 +18,7 @@ import com.jme3.scene.shape.Box;
 import com.jme3.scene.Node;
 import com.jme3.scene.CameraNode;
 import com.jme3.math.Vector3f;
+import com.jme3.scene.shape.Sphere;
 import com.jme3.texture.Texture;
 import com.jme3.util.TangentBinormalGenerator;
 import java.util.Random;
@@ -40,18 +44,26 @@ public class Sagacity extends SimpleApplication
   private int camY = 750;
   private int camZ = 35;
   private int playerX = 0;
-  private int playerY = 7;
+  private int playerY = 5;
   private int playerZ = 0;
+  private int roomGridWidth = 14;
+  private int roomGridHeight = 10;
+  private int wallCollisionIndex = 0;
   
   private float blockWidth = 5;
   private float blockHeight = 5;
   
   private Ray playerRay;
-  
+  private BulletAppState bulletAppState = new BulletAppState();
+  private RigidBodyControl wallCollision[];
+  private RigidBodyControl floorCollision[];
+  private RigidBodyControl playerCollision;
+          
   private boolean allowLeftMovement = true;
   private boolean allowUpMovement = true;
   private boolean allowRightMovement = true;
   private boolean allowDownMovement = true;
+  private boolean ignoreCollision = false; // for debugging purposes
   // -------------------------- //
     
   public static void main(String[] args) 
@@ -64,12 +76,13 @@ public class Sagacity extends SimpleApplication
   @Override
   public void simpleInitApp() 
   {
+      stateManager.attach(bulletAppState);
       // y value should be reset to 50
       setCamera(rootNode, camX, camY, camZ);
       initKeys();
       makeFloor();
       makePlayer();
-      
+      makeEnvironment();
   }
   
   protected void makePlayer()
@@ -83,13 +96,18 @@ public class Sagacity extends SimpleApplication
       Geometry playerBox = new Geometry("Player", box);
       playerBox.setLocalTranslation(0f, 7f, 0f);
       TangentBinormalGenerator.generate(box);
-      Material mat1 = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-      mat1.setColor("Color", ColorRGBA.White);
-      playerBox.setMaterial(mat1);
+      Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+      mat.setColor("Color", ColorRGBA.White);
+      playerBox.setMaterial(mat);
       player.attachChild(playerBox);
       
+      // Adding the player to the physical space (allowing for collision)
+      playerCollision = new RigidBodyControl(0f);
+      playerBox.addControl(playerCollision);
+      bulletAppState.getPhysicsSpace().add(playerCollision);
+ 
       playerRay = new Ray(player.getChild("Player").getLocalTranslation(), rootNode.getChild("Top Wall 2").getLocalTranslation());
-      playerRay.setLimit(0.001f);
+      playerRay.setLimit(.00001f);
       rootNode.attachChild(player);
   }
   
@@ -98,13 +116,22 @@ public class Sagacity extends SimpleApplication
   {
       // Change background color of the display
       viewPort.setBackgroundColor(new ColorRGBA(0.7f, 0.8f, 1f, 1f));
+      
+      int numRooms = getNumRooms(minRooms, maxRooms);
+      
       // Determining the number of rooms that will be on the current floor
-      rooms = new Node[getNumRooms(minRooms, maxRooms)];
+      rooms = new Node[numRooms];
+      
+      // 2400 is an arbitrary large value to avoid indexing issues
+      wallCollision = new RigidBodyControl[numRooms * 2400];
+      floorCollision = new RigidBodyControl[numRooms];
+      
       initRooms();
       initNeighborData();
+      initEnvironmentData();
       
       // Initially build the room around the root node
-      makeGround(rootNode);
+      makeGround(rootNode, 0);
       makeWalls(rootNode);
       makeLight(rootNode);
       
@@ -260,6 +287,7 @@ public class Sagacity extends SimpleApplication
           // Must attach the child room to the rootNode during the first iteration
           if(i == 0)
           {
+              
               rootNode.attachChild(rooms[i]);
           }
           else
@@ -267,7 +295,7 @@ public class Sagacity extends SimpleApplication
               rooms[i-1].attachChild(rooms[i]);
           }
           
-          makeGround(rooms[i]);
+          makeGround(rooms[i], 0);
           makeWalls(rooms[i]);
           makeDoors();
           makeLight(rooms[i]);
@@ -289,9 +317,9 @@ public class Sagacity extends SimpleApplication
   }
   
   // Creates the floor of a room
-  protected void makeGround(Node room)
+  protected void makeGround(Node room, int roomNum)
   {
-      Box box = new Box(35f, .2f, 25f);
+      Box box = new Box(35, .2f, 25);
       Geometry floor = new Geometry("Floor", box);
       floor.setLocalTranslation(0f, 0f, 0f);
       TangentBinormalGenerator.generate(box);
@@ -300,6 +328,9 @@ public class Sagacity extends SimpleApplication
       mat.setTexture("ColorMap", floorTexture);
       floor.setMaterial(mat);
       room.attachChild(floor);
+      floorCollision[roomNum] = new RigidBodyControl(0.0f);
+      floor.addControl(floorCollision[roomNum]);
+      bulletAppState.getPhysicsSpace().add(floorCollision[roomNum]);
   }
   
   // Creates the walls of a room
@@ -320,6 +351,18 @@ public class Sagacity extends SimpleApplication
       {
           room.attachChild(leftWall[i]);
           room.attachChild(rightWall[i]);
+          // Adding the wall to the physical space
+          wallCollision[wallCollisionIndex] = new RigidBodyControl(0.0f);
+          leftWall[i].addControl(wallCollision[wallCollisionIndex]);
+          bulletAppState.getPhysicsSpace().add(wallCollision[wallCollisionIndex]);
+          
+          wallCollisionIndex++;
+          
+          wallCollision[wallCollisionIndex] = new RigidBodyControl(0.0f);
+          rightWall[i].addControl(wallCollision[wallCollisionIndex]);
+          bulletAppState.getPhysicsSpace().add(wallCollision[wallCollisionIndex]);
+          
+          wallCollisionIndex++;
       }
       
       // Attach the top and bottom walls to the node - could be a method?
@@ -327,6 +370,18 @@ public class Sagacity extends SimpleApplication
       {
           room.attachChild(topWall[i]);
           room.attachChild(bottomWall[i]);
+          // Adding the wall to the physical space
+          wallCollision[wallCollisionIndex] = new RigidBodyControl(0.0f);
+          topWall[i].addControl(wallCollision[wallCollisionIndex]);
+          bulletAppState.getPhysicsSpace().add(wallCollision[wallCollisionIndex]);
+          
+          wallCollisionIndex++;
+          
+          wallCollision[wallCollisionIndex] = new RigidBodyControl(0.0f);
+          bottomWall[i].addControl(wallCollision[wallCollisionIndex]);
+          bulletAppState.getPhysicsSpace().add(wallCollision[wallCollisionIndex]);
+          
+          wallCollisionIndex++;
       }
   }   
   
@@ -348,7 +403,6 @@ public class Sagacity extends SimpleApplication
           wallLocation = -20;
       }
       
-      TangentBinormalGenerator.generate(box);
       Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
       Texture wallTexture = assetManager.loadTexture("Textures/BrickGrey.jpg");
       mat.setTexture("ColorMap", wallTexture);
@@ -378,12 +432,13 @@ public class Sagacity extends SimpleApplication
           
           wall[i].setMaterial(mat);
           //wall.setMaterial((Material) assetManager.loadMaterial("Materials/ShinyRock.j3m"));
+          
           wallLocation += blockHeight * 2;
       }
       
       return wall;
   }
-  
+
   protected void initNeighborData()
   {
       rootNode.setUserData("leftNeighbor", false);
@@ -400,6 +455,87 @@ public class Sagacity extends SimpleApplication
       }
   }
   
+  // Initializing the environment user data for each room node
+  protected void initEnvironmentData()
+  {
+      int random = -1;
+      
+      for(int row = 1; row <= roomGridWidth; row++)
+      {
+          for(int col = 1; col <= roomGridHeight; col++)
+          {
+              // Gives a 20% chance for an object to be placed in each location
+              random = getRandom(5);
+              
+              if(random == 1) // 1 is an arbitrary 'magic number'
+              {
+                  rootNode.setUserData("EnvironmentObject " + row + "-" + col, true);
+              }
+              else
+              {
+                  rootNode.setUserData("EnvironmentObject " + row + "-" + col, false);
+              }
+          }
+      }
+      
+      for(Node room : rooms)
+      {
+          for(int row = 2; row <= roomGridWidth; row++)
+          {
+              for(int col = 2; col <= roomGridHeight; col++)
+              {
+                  random = getRandom(5);
+                  
+                  if(random == 1) // 1 is an arbitrary 'magic number'
+                  {
+                      room.setUserData("EnvironmentObject " + row + "-" + col, true);
+                  } 
+                  else
+                  {
+                      room.setUserData("EnvironmentObject " + row + "-" + col, false);
+                  }
+              }
+          }
+      }
+  }
+  
+  // Called to set user data to determine where environment pieces should go
+  protected void makeEnvironment()
+  {
+      // Displacement variables
+      double xLocation = 0;
+      double zLocation = 0;
+      
+      for(int row = 2; row <= roomGridWidth; row++)
+      {
+          for(int col = 2; col <= roomGridHeight; col++)
+          { 
+              if(rootNode.getUserData("EnvironmentObject " + row + "-" + col))
+              {
+                  xLocation = getRoomItemXLocation(row);
+                  zLocation = getRoomItemZLocation(col);
+                  makeEnvironmentItem(rootNode, xLocation, zLocation);
+              }
+          }
+      }
+      
+      for(Node room : rooms)
+      {
+          for(int row = 2; row <= roomGridWidth; row++)
+          {
+              for(int col = 2; col <= roomGridHeight; col++)
+              { 
+                  if(room.getUserData("EnvironmentObject " + row + "-" + col))
+                  {
+                      xLocation = getRoomItemXLocation(row);
+                      zLocation = getRoomItemZLocation(col);
+                      makeEnvironmentItem(room, xLocation, zLocation);
+                  }
+              }
+          }
+      }
+  }
+  
   // NEEDS TO BE FINISHED - IGNORE THIS - will be used for random door placement
   protected void addNeighborData()
   {
@@ -413,6 +549,36 @@ public class Sagacity extends SimpleApplication
           row = rooms[i].getUserData("row");
           col = rooms[i].getUserData("col");
       }
+  }
+  
+  // Returns the xLocation of an object to be placed in a room
+  protected double getRoomItemXLocation(int row)
+  {
+      // Simple displacement algorithm
+      double xLocation = (row - 8) * 5;
+      
+      return xLocation;
+  }
+  
+  // Returns the zLocation of an object to be placed in a room
+  protected double getRoomItemZLocation(int col)
+  {
+      // Simple displacement algorithm
+      double zLocation = (col - 6) * 5;
+      
+      return zLocation;
+  }
+  
+  protected void makeEnvironmentItem(Node room, double xLocation, double zLocation)
+  {
+      Sphere sphere = new Sphere(32, 32, 2.0f);
+      Geometry environmentItem = new Geometry("EnvironmentObject", sphere);
+      environmentItem.setLocalTranslation((float)xLocation, 2f, (float)zLocation);
+      TangentBinormalGenerator.generate(sphere);
+      Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+      mat.setColor("Color", ColorRGBA.Brown);
+      environmentItem.setMaterial(mat);
+      room.attachChild(environmentItem);
   }
   
   // Detaches wall segments as needed
@@ -651,7 +817,9 @@ public class Sagacity extends SimpleApplication
     inputManager.addMapping("PlayerRight",  new KeyTrigger(KeyInput.KEY_D));
     inputManager.addMapping("PlayerDown",  new KeyTrigger(KeyInput.KEY_S));
     
-    inputManager.addListener(actionListener,"Zoom", "CameraReset");
+    inputManager.addMapping("IgnoreCollision",  new KeyTrigger(KeyInput.KEY_RCONTROL));
+    
+    inputManager.addListener(actionListener,"Zoom", "CameraReset", "IgnoreCollision");
     inputManager.addListener(analogListener,"CameraLeft", "CameraUp", "CameraRight", "CameraDown", "PlayerLeft", "PlayerUp", "PlayerRight", "PlayerDown");
   }
 
@@ -683,6 +851,21 @@ public class Sagacity extends SimpleApplication
             camZ = 35;
             setCamera(currentNode, camX, camY, camZ);
         }
+        if (name.equals("IgnoreCollision")) 
+        {
+            if(!ignoreCollision)
+            {
+                allowLeftMovement = true;
+                allowUpMovement = true;
+                allowDownMovement = true;
+                allowRightMovement = true;
+                ignoreCollision = true;
+            }
+            else
+            {
+                ignoreCollision = false;
+            }
+        } 
     }
   };
   
@@ -715,6 +898,10 @@ public class Sagacity extends SimpleApplication
         {
              playerX -= 1;
              player.getChild("Player").setLocalTranslation(playerX, playerY, playerZ);
+             // Adding the player to the physical space (allowing for collision)
+             playerCollision = new RigidBodyControl(0f);
+             player.getChild("Player").addControl(playerCollision);
+             bulletAppState.getPhysicsSpace().add(playerCollision);
              camX -= 1;
              camNode.setLocalTranslation(camX, camY, camZ);
         }
@@ -722,6 +909,9 @@ public class Sagacity extends SimpleApplication
         {
              playerZ -= 1;
              player.getChild("Player").setLocalTranslation(playerX, playerY, playerZ);
+             playerCollision = new RigidBodyControl(0f);
+             player.getChild("Player").addControl(playerCollision);
+             bulletAppState.getPhysicsSpace().add(playerCollision);
              camZ -= 1;
              camNode.setLocalTranslation(camX, camY, camZ);
         }
@@ -729,6 +919,9 @@ public class Sagacity extends SimpleApplication
         {
              playerX += 1;
              player.getChild("Player").setLocalTranslation(playerX, playerY, playerZ);
+             playerCollision = new RigidBodyControl(0f);
+             player.getChild("Player").addControl(playerCollision);
+             bulletAppState.getPhysicsSpace().add(playerCollision);
              camX += 1;
              camNode.setLocalTranslation(camX, camY, camZ);
         }
@@ -736,6 +929,9 @@ public class Sagacity extends SimpleApplication
         {
              playerZ += 1;
              player.getChild("Player").setLocalTranslation(playerX, playerY, playerZ);
+             playerCollision = new RigidBodyControl(0f);
+             player.getChild("Player").addControl(playerCollision);
+             bulletAppState.getPhysicsSpace().add(playerCollision);
              camZ += 1;
              camNode.setLocalTranslation(camX, camY, camZ);
         }
@@ -745,6 +941,9 @@ public class Sagacity extends SimpleApplication
   @Override
   public void simpleUpdate(float tpf) 
   {
-      checkPlayerCollision();
+      if(!ignoreCollision)
+      {
+          checkPlayerCollision();
+      }
   }
 }
