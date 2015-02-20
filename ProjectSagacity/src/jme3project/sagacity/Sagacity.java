@@ -301,7 +301,7 @@ public class Sagacity extends SimpleApplication
           {
               rooms[i-1].attachChild(rooms[i]);
           }
-          
+        
           makeGround(rooms[i], 0);
           makeWalls(rooms[i]);
           makeDoors();
@@ -314,11 +314,13 @@ public class Sagacity extends SimpleApplication
   
   protected void initRooms()
   {
+      rootNode.setUserData("isRendered", false);
       for(int i = 0; i < rooms.length; i++)
       {
           rooms[i] = new Node();
           rooms[i].setUserData("row", 0);
           rooms[i].setUserData("col", 0);
+          rooms[i].setUserData("isRendered", false);
       }
   }
   
@@ -540,6 +542,7 @@ public class Sagacity extends SimpleApplication
               }
           }
       }
+      
   }
   
   // NEEDS TO BE FINISHED - IGNORE THIS - will be used for random door placement
@@ -710,6 +713,54 @@ public class Sagacity extends SimpleApplication
   {
       playerRay.setOrigin(player.getChild("Player").getLocalTranslation());
       checkRoomCollision(playerRay);
+  }
+  
+  // Renders only the rooms closest to the player - needs work
+  protected void renderNearestRooms()
+  {
+      double renderDistance = 200;
+      boolean isRendered = rootNode.getUserData("isRendered");
+      
+      
+      if((player.getChild("Player").getLocalTranslation().distance(rootNode.getLocalTranslation()) < renderDistance) && !isRendered)
+      {
+          makeGround(rootNode, 0);
+          makeWalls(rootNode);
+          makeDoors();
+          //makeEnvironment(rootNode);
+          rootNode.setUserData("isRendered", true);
+      }
+      
+      for(int i = 0; i < rooms.length - 1; i++)
+      {
+          double roomDistance = player.getChild("Player").getLocalTranslation().distance(rooms[i].getLocalTranslation());
+          isRendered = rooms[i].getUserData("isRendered");
+          if(roomDistance < renderDistance && !isRendered)
+          {
+              makeGround(rooms[i], 0);
+              makeWalls(rooms[i]);
+              makeDoors();
+              //makeEnvironment(rooms[i]);
+              
+              rooms[i].setUserData("isRendered", true);
+          }
+          else if(roomDistance > renderDistance)
+          {
+              for(int j = 0; j < 6; j++)
+              {
+                  rooms[i].detachChildNamed("Left Wall " + j);
+                  rooms[i].detachChildNamed("Right Wall " + j);
+              }
+              for(int j = 0; j < 8; j++)
+              {
+                  rooms[i].detachChildNamed("Top Wall " + j);
+                  rooms[i].detachChildNamed("Bottom Wall " + j);
+              }
+              rooms[i].detachChildNamed("Floor");
+              rooms[i].detachChildNamed("EnvironmentObject");
+              rooms[i].setUserData("isRendered", false);
+          }
+      }
   }
   
   protected void checkRoomCollision(Ray ray)
@@ -974,5 +1025,6 @@ public class Sagacity extends SimpleApplication
       {
           checkPlayerCollision();
       }
+      //renderNearestRooms();
   }
 }
