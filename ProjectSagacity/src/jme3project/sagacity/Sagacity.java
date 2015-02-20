@@ -2,14 +2,15 @@ package jme3project.sagacity;
 
 import com.jme3.app.SimpleApplication;
 import com.jme3.bullet.BulletAppState;
-import com.jme3.bullet.collision.shapes.BoxCollisionShape;
 import com.jme3.bullet.control.RigidBodyControl;
 import com.jme3.collision.CollisionResults;
 import com.jme3.input.KeyInput;
 import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.AnalogListener;
 import com.jme3.input.controls.KeyTrigger;
+import com.jme3.light.AmbientLight;
 import com.jme3.light.DirectionalLight;
+import com.jme3.light.PointLight;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.Ray;
@@ -18,6 +19,7 @@ import com.jme3.scene.shape.Box;
 import com.jme3.scene.Node;
 import com.jme3.scene.CameraNode;
 import com.jme3.math.Vector3f;
+import com.jme3.scene.control.LightControl;
 import com.jme3.scene.shape.Sphere;
 import com.jme3.texture.Texture;
 import com.jme3.util.TangentBinormalGenerator;
@@ -37,6 +39,8 @@ public class Sagacity extends SimpleApplication
   CollisionResults results;
   
   private DirectionalLight sunlight;
+  private AmbientLight ambient;
+  private PointLight roomLight;
   
   private int minRooms = 10;
   private int maxRooms = 20;
@@ -49,6 +53,7 @@ public class Sagacity extends SimpleApplication
   private int roomGridWidth = 14;
   private int roomGridHeight = 10;
   private int wallCollisionIndex = 0;
+  private int environmentCollisionIndex = 0;
   
   private float blockWidth = 5;
   private float blockHeight = 5;
@@ -57,6 +62,7 @@ public class Sagacity extends SimpleApplication
   private BulletAppState bulletAppState = new BulletAppState();
   private RigidBodyControl wallCollision[];
   private RigidBodyControl floorCollision[];
+  private RigidBodyControl environmentCollision[];
   private RigidBodyControl playerCollision;
           
   private boolean allowLeftMovement = true;
@@ -83,6 +89,7 @@ public class Sagacity extends SimpleApplication
       makeFloor();
       makePlayer();
       makeEnvironment();
+      initLight();
   }
   
   protected void makePlayer()
@@ -125,6 +132,7 @@ public class Sagacity extends SimpleApplication
       // 2400 is an arbitrary large value to avoid indexing issues
       wallCollision = new RigidBodyControl[numRooms * 2400];
       floorCollision = new RigidBodyControl[numRooms];
+      environmentCollision = new RigidBodyControl[numRooms * 2400];
       
       initRooms();
       initNeighborData();
@@ -133,7 +141,6 @@ public class Sagacity extends SimpleApplication
       // Initially build the room around the root node
       makeGround(rootNode, 0);
       makeWalls(rootNode);
-      makeLight(rootNode);
       
       // Arbitrary values - user data cannot be negative, so I start with a high number
       int row = 100;
@@ -298,7 +305,6 @@ public class Sagacity extends SimpleApplication
           makeGround(rooms[i], 0);
           makeWalls(rooms[i]);
           makeDoors();
-          makeLight(rooms[i]);
           
           // Reset loop efficiency variables
           lastRoll = -1;
@@ -403,9 +409,9 @@ public class Sagacity extends SimpleApplication
           wallLocation = -20;
       }
       
-      Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-      Texture wallTexture = assetManager.loadTexture("Textures/BrickGrey.jpg");
-      mat.setTexture("ColorMap", wallTexture);
+      //Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+      //Texture wallTexture = assetManager.loadTexture("Textures/BrickGrey.jpg");
+      //mat.setTexture("ColorMap", wallTexture);
       
       for(int i = 0; i < wall.length - 1; i++)
       {
@@ -430,8 +436,8 @@ public class Sagacity extends SimpleApplication
               wall[i].setLocalTranslation(wallLocation, 5f, 25f);
           }
           
-          wall[i].setMaterial(mat);
-          //wall.setMaterial((Material) assetManager.loadMaterial("Materials/ShinyRock.j3m"));
+          //wall[i].setMaterial(mat);
+          wall[i].setMaterial((Material) assetManager.loadMaterial("Materials/GreyBrick.j3m"));
           
           wallLocation += blockHeight * 2;
       }
@@ -575,9 +581,18 @@ public class Sagacity extends SimpleApplication
       Geometry environmentItem = new Geometry("EnvironmentObject", sphere);
       environmentItem.setLocalTranslation((float)xLocation, 2f, (float)zLocation);
       TangentBinormalGenerator.generate(sphere);
-      Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-      mat.setColor("Color", ColorRGBA.Brown);
-      environmentItem.setMaterial(mat);
+      //Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+      //mat.setColor("Color", ColorRGBA.Brown);
+      environmentItem.setMaterial((Material) assetManager.loadMaterial("Materials/Rock.j3m"));
+      
+      /* COLLISION FOR ENV OBJECTS - MESSES UP RANDOMIZATION FOR SOME REASON
+      environmentCollision[environmentCollisionIndex] = new RigidBodyControl(0.0f);
+      environmentItem.addControl(environmentCollision[environmentCollisionIndex]);
+      bulletAppState.getPhysicsSpace().add(environmentCollision[environmentCollisionIndex]);
+      
+      environmentCollisionIndex++;
+      */
+      
       room.attachChild(environmentItem);
   }
   
@@ -632,12 +647,26 @@ public class Sagacity extends SimpleApplication
       camNode.lookAt(room.getLocalTranslation(), Vector3f.UNIT_Y); // Change room to rootNode as needed for testing
   }
   
-  // TODO: makeLight method should use ambientLighting
+  // Initializes ambient light and creates a light to make the rooms brighter
+  protected void initLight()
+  {
+      ambient = new AmbientLight();
+      ambient.setColor(ColorRGBA.White.mult(1.3f));
+      rootNode.addLight(ambient);
+      
+      roomLight = new PointLight();
+      roomLight.setPosition(camNode.getLocalTranslation());
+      rootNode.addLight(roomLight);
+      LightControl lightControl = new LightControl();
+      camNode.addControl(lightControl);
+  }
+  
+  // Makes a directional light in any room as needed
   protected void makeLight(Node room)
   {
       sunlight = new DirectionalLight();
       sunlight.setColor(ColorRGBA.White);
-      sunlight.setDirection(new Vector3f(1.0f,1.0f,1.0f).normalizeLocal());
+      sunlight.setDirection(room.getLocalTranslation().normalizeLocal());
       room.addLight(sunlight);
   }
   
