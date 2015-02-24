@@ -44,12 +44,10 @@ public class Sagacity extends SimpleApplication
   
   private int minRooms = 10;
   private int maxRooms = 20;
-  private int camX = 0;
-  private int camY = 750;
-  private int camZ = 35;
-  private int playerX = 0;
-  private int playerY = 5;
-  private int playerZ = 0;
+  private float camX = 0;
+  private float camY = 750;
+  private float camZ = 35;
+  
   private int roomGridWidth = 14;
   private int roomGridHeight = 10;
   private int wallCollisionIndex = 0;
@@ -58,31 +56,28 @@ public class Sagacity extends SimpleApplication
   private float blockWidth = 5;
   private float blockHeight = 5;
   
-  private Ray playerRay;
   private BulletAppState bulletAppState = new BulletAppState();
   private RigidBodyControl wallCollision[];
   private RigidBodyControl floorCollision[];
   private RigidBodyControl environmentCollision[];
   private RigidBodyControl playerCollision;
-          
-  private boolean allowLeftMovement = true;
-  private boolean allowUpMovement = true;
-  private boolean allowRightMovement = true;
-  private boolean allowDownMovement = true;
-  private boolean ignoreCollision = false; // for debugging purposes
+  
+  Player sage = new Player();
+
+
   // -------------------------- //
     
   public static void main(String[] args) 
   {
     Sagacity app = new Sagacity();
+
     app.start();
   }
   
   // Runs at startup of the application
   @Override
   public void simpleInitApp() 
-  {
-      stateManager.attach(bulletAppState);
+  {      stateManager.attach(bulletAppState);
       // y value should be reset to 50
       setCamera(rootNode, camX, camY, camZ);
       initKeys();
@@ -113,8 +108,8 @@ public class Sagacity extends SimpleApplication
       playerBox.addControl(playerCollision);
       bulletAppState.getPhysicsSpace().add(playerCollision);
  
-      playerRay = new Ray(player.getChild("Player").getLocalTranslation(), rootNode.getChild("Top Wall 2").getLocalTranslation());
-      playerRay.setLimit(.00001f);
+      //playerRay = new Ray(player.getChild("Player").getLocalTranslation(), rootNode.getChild("Top Wall 2").getLocalTranslation());
+      //playerRay.setLimit(.00001f);
       rootNode.attachChild(player);
   }
   
@@ -641,7 +636,7 @@ public class Sagacity extends SimpleApplication
   }
   
   // Sets the camera to the desired location
-  protected void setCamera(Node room, int x, int y, int z)
+  protected void setCamera(Node room, float x, float y, float z)
   {
       camNode = new CameraNode("Camera Node", cam); 
       flyCam.setEnabled(false);
@@ -709,11 +704,11 @@ public class Sagacity extends SimpleApplication
       return false;
   }
   
-  protected void checkPlayerCollision()
+ /* protected void checkPlayerCollision()
   {
       playerRay.setOrigin(player.getChild("Player").getLocalTranslation());
       checkRoomCollision(playerRay);
-  }
+  }*/
   
   // Renders only the rooms closest to the player - needs work
   protected void renderNearestRooms()
@@ -763,7 +758,7 @@ public class Sagacity extends SimpleApplication
       }
   }
   
-  protected void checkRoomCollision(Ray ray)
+ /* protected void checkRoomCollision(Ray ray)
   {
       // Add in collision for rootNode and final room node rooms[length - 1]
       for(int i = 0; i < rooms.length - 1; i++)
@@ -785,11 +780,11 @@ public class Sagacity extends SimpleApplication
       }
       if (results.size() > 0) 
       {
-          allowUpMovement = false;
+          sage.setAllowUp(false);
       }
       else
       {
-          allowUpMovement = true;
+          sage.setAllowUp(false);
       }
       
       results.clear();
@@ -813,11 +808,11 @@ public class Sagacity extends SimpleApplication
       }
       if (results.size() > 0) 
       {
-          allowLeftMovement = false;
+          sage.setAllowLeft(false);
       }
       else
       {
-          allowLeftMovement = true;
+          sage.setAllowLeft(true);
       }
       
       results.clear();
@@ -842,11 +837,11 @@ public class Sagacity extends SimpleApplication
       
       if (results.size() > 0) 
       {
-          allowRightMovement = false;
+          sage.setAllowRight(false);
       }
       else
       {
-          allowRightMovement = true;
+          sage.setAllowRight(false);
       }
       
       results.clear();
@@ -872,15 +867,15 @@ public class Sagacity extends SimpleApplication
       
       if (results.size() > 0) 
       {
-          allowDownMovement = false;
+          sage.setAllowDown(false);
       }
       else
       {
-          allowDownMovement = true;
+          sage.setAllowDown(true);
       }
       
       results.clear();
-  }
+  }*/
   
   // Initializes key bindings - we will use booleans to create game states
   private void initKeys() 
@@ -931,7 +926,7 @@ public class Sagacity extends SimpleApplication
             camZ = 35;
             setCamera(currentNode, camX, camY, camZ);
         }
-        if (name.equals("IgnoreCollision")) 
+       /* if (name.equals("IgnoreCollision")) 
         {
             if(!ignoreCollision)
             {
@@ -945,7 +940,7 @@ public class Sagacity extends SimpleApplication
             {
                 ignoreCollision = false;
             }
-        } 
+        } */
     }
   };
   
@@ -974,51 +969,51 @@ public class Sagacity extends SimpleApplication
              camZ += 5;
              camNode.setLocalTranslation(camX, camY, camZ);
         }
-        if (name.equals("PlayerLeft") && allowLeftMovement) 
+        if (name.equals("PlayerLeft") && sage.getAllowLeft()) 
         {
-             playerX -= 1;
-             player.getChild("Player").setLocalTranslation(playerX, playerY, playerZ);
-             // Adding the player to the physical space (allowing for collision)
-             playerCollision = new RigidBodyControl(0f);
-             player.getChild("Player").addControl(playerCollision);
-             bulletAppState.getPhysicsSpace().add(playerCollision);
-             camX -= 1;
-             camNode.setLocalTranslation(camX, camY, camZ);
+            sage.setX(-.1f);
+            player.getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
+            // Adding the player to the physical space (allowing for collision)
+            playerCollision = new RigidBodyControl(0f);
+            player.getChild("Player").addControl(playerCollision);
+            bulletAppState.getPhysicsSpace().add(playerCollision);
+            camX -= .1;
+            camNode.setLocalTranslation(camX, camY, camZ);
         }
-        if (name.equals("PlayerUp") && allowUpMovement) 
+        if (name.equals("PlayerUp") && sage.getAllowUp()) 
         {
-             playerZ -= 1;
-             player.getChild("Player").setLocalTranslation(playerX, playerY, playerZ);
-             playerCollision = new RigidBodyControl(0f);
-             player.getChild("Player").addControl(playerCollision);
-             bulletAppState.getPhysicsSpace().add(playerCollision);
-             camZ -= 1;
-             camNode.setLocalTranslation(camX, camY, camZ);
+            sage.setZ(-.1f);
+            player.getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
+            playerCollision = new RigidBodyControl(0f);
+            player.getChild("Player").addControl(playerCollision);
+            bulletAppState.getPhysicsSpace().add(playerCollision);
+            camZ -= .1;
+            camNode.setLocalTranslation(camX, camY, camZ);
         }
-        if (name.equals("PlayerRight") && allowRightMovement) 
+        if (name.equals("PlayerRight") && sage.getAllowRight()) 
         {
-             playerX += 1;
-             player.getChild("Player").setLocalTranslation(playerX, playerY, playerZ);
-             playerCollision = new RigidBodyControl(0f);
-             player.getChild("Player").addControl(playerCollision);
-             bulletAppState.getPhysicsSpace().add(playerCollision);
-             camX += 1;
-             camNode.setLocalTranslation(camX, camY, camZ);
+            sage.setX(.1f);
+            player.getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
+            playerCollision = new RigidBodyControl(0f);
+            player.getChild("Player").addControl(playerCollision);
+            bulletAppState.getPhysicsSpace().add(playerCollision);
+            camX += .1;
+            camNode.setLocalTranslation(camX, camY, camZ);
         }
-        if (name.equals("PlayerDown") && allowDownMovement) 
+        if (name.equals("PlayerDown") && sage.getAllowDown()) 
         {
-             playerZ += 1;
-             player.getChild("Player").setLocalTranslation(playerX, playerY, playerZ);
-             playerCollision = new RigidBodyControl(0f);
-             player.getChild("Player").addControl(playerCollision);
-             bulletAppState.getPhysicsSpace().add(playerCollision);
-             camZ += 1;
-             camNode.setLocalTranslation(camX, camY, camZ);
+            sage.setZ(.1f);
+            player.getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
+            playerCollision = new RigidBodyControl(0f);
+            player.getChild("Player").addControl(playerCollision);
+            bulletAppState.getPhysicsSpace().add(playerCollision);
+            camZ += .1;
+            camNode.setLocalTranslation(camX, camY, camZ);
         }
     }
   };
   
-  @Override
+  /*@Override
   public void simpleUpdate(float tpf) 
   {
       if(!ignoreCollision)
@@ -1026,5 +1021,5 @@ public class Sagacity extends SimpleApplication
           checkPlayerCollision();
       }
       //renderNearestRooms();
-  }
+  }*/
 }
