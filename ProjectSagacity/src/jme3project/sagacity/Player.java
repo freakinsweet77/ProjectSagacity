@@ -83,9 +83,9 @@ public class Player {
       return node;
   }
   
-  public void setNode()
+  public void setNode(Node newNode)
   {
-      
+      node = newNode;
   }
   
   public boolean getAllowRight()
