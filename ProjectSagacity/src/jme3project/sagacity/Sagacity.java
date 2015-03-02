@@ -19,6 +19,7 @@ import com.jme3.scene.shape.Box;
 import com.jme3.scene.Node;
 import com.jme3.scene.CameraNode;
 import com.jme3.math.Vector3f;
+import com.jme3.scene.Spatial;
 import com.jme3.scene.control.CameraControl;
 import com.jme3.scene.control.CameraControl.ControlDirection;
 import com.jme3.scene.control.LightControl;
@@ -84,12 +85,11 @@ public class Sagacity extends SimpleApplication
         sage.setNode(rootNode);
         sage.getNode().setLocalTranslation(rootNode.getLocalTranslation());
 
-        Box box = new Box(2.0f, 2.0f, 2.0f);
-        Geometry playerBox = new Geometry("Player", box);
+        Spatial playerBox = assetManager.loadModel("Models/Sacboy.j3o");
         playerBox.setLocalTranslation(0f, 7f, 0f);
-        TangentBinormalGenerator.generate(box);
+        playerBox.setName("Player");
         Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-        mat.setColor("Color", ColorRGBA.White);
+        mat.setColor("Color", ColorRGBA.Magenta);
         playerBox.setMaterial(mat);
         sage.getNode().attachChild(playerBox);
 

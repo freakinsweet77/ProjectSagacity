@@ -11,7 +11,6 @@ public class Player {
   private float x;
   private float y;
   private float z;
-  
             
   private boolean allowLeft;
   private boolean allowRight;
