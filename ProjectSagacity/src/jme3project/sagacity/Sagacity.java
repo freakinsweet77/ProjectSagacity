@@ -13,15 +13,14 @@ import com.jme3.light.DirectionalLight;
 import com.jme3.light.PointLight;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
-import com.jme3.math.Ray;
+import com.jme3.math.FastMath;
+import com.jme3.math.Quaternion;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.shape.Box;
 import com.jme3.scene.Node;
 import com.jme3.scene.CameraNode;
 import com.jme3.math.Vector3f;
 import com.jme3.scene.Spatial;
-import com.jme3.scene.control.CameraControl;
-import com.jme3.scene.control.CameraControl.ControlDirection;
 import com.jme3.scene.control.LightControl;
 import com.jme3.scene.shape.Sphere;
 import com.jme3.texture.Texture;
@@ -55,6 +54,7 @@ public class Sagacity extends SimpleApplication
     private RigidBodyControl floorCollision[];
     private RigidBodyControl environmentCollision[];
     private RigidBodyControl playerCollision;
+    private Quaternion rotation = new Quaternion();
     private Player sage = new Player();
     private Camera camera = new Camera(rootNode);
 
@@ -95,7 +95,7 @@ public class Sagacity extends SimpleApplication
 
 
         // Adding the player to the physical space (allowing for collision)
-        playerCollision = new RigidBodyControl(.1f);
+        playerCollision = new RigidBodyControl(0.1f);
         playerBox.addControl(playerCollision);
         playerBox.getControl(RigidBodyControl.class).setKinematic(true);
         bulletAppState.getPhysicsSpace().add(playerCollision);
@@ -946,6 +946,11 @@ public class Sagacity extends SimpleApplication
             if (name.equals("PlayerLeft") && sage.getAllowLeft())
             {
                 sage.setX(-sage.getSpeed());
+                
+                // Setting the character facing rotation angle
+                rotation.fromAngleAxis(FastMath.PI/2, new Vector3f(0,1,0));
+                sage.getNode().getChild("Player").setLocalRotation(rotation);
+                
                 sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
                 
                 camera.setX(-sage.getSpeed());
@@ -954,6 +959,11 @@ public class Sagacity extends SimpleApplication
             if (name.equals("PlayerUp") && sage.getAllowUp())
             {
                 sage.setZ(-sage.getSpeed());
+                
+                // Setting the character facing rotation angle
+                rotation.fromAngleAxis(FastMath.PI * 2, new Vector3f(0,1,0));
+                sage.getNode().getChild("Player").setLocalRotation(rotation);
+                
                 sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
                 
                 camera.setZ(-sage.getSpeed());
@@ -962,6 +972,11 @@ public class Sagacity extends SimpleApplication
             if (name.equals("PlayerRight") && sage.getAllowRight())
             {
                 sage.setX(sage.getSpeed());
+                
+                // Setting the character facing rotation angle
+                rotation.fromAngleAxis(FastMath.PI * 3 / 2, new Vector3f(0,1,0));
+                sage.getNode().getChild("Player").setLocalRotation(rotation);
+                
                 sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
                 
                 camera.setX(sage.getSpeed());
@@ -972,6 +987,10 @@ public class Sagacity extends SimpleApplication
             {
                 sage.setZ(sage.getSpeed());
                 sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
+                
+                // Setting the character facing rotation angle
+                rotation.fromAngleAxis(FastMath.PI, new Vector3f(0,1,0));
+                sage.getNode().getChild("Player").setLocalRotation(rotation);
                 
                 camera.setZ(sage.getSpeed());
                 camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
