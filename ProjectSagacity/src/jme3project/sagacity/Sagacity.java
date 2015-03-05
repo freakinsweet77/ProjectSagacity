@@ -95,8 +95,9 @@ public class Sagacity extends SimpleApplication
 
 
         // Adding the player to the physical space (allowing for collision)
-        playerCollision = new RigidBodyControl(0f);
+        playerCollision = new RigidBodyControl(.1f);
         playerBox.addControl(playerCollision);
+        playerBox.getControl(RigidBodyControl.class).setKinematic(true);
         bulletAppState.getPhysicsSpace().add(playerCollision);
 
         //playerRay = new Ray(player.getChild("Player").getLocalTranslation(), rootNode.getChild("Top Wall 2").getLocalTranslation());
@@ -562,13 +563,13 @@ public class Sagacity extends SimpleApplication
         //mat.setColor("Color", ColorRGBA.Brown);
         environmentItem.setMaterial((Material) assetManager.loadMaterial("Materials/Rock.j3m"));
 
-        /* COLLISION FOR ENV OBJECTS - MESSES UP RANDOMIZATION FOR SOME REASON
-         environmentCollision[environmentCollisionIndex] = new RigidBodyControl(0.0f);
+        
+         environmentCollision[environmentCollisionIndex] = new RigidBodyControl(1.0f);
          environmentItem.addControl(environmentCollision[environmentCollisionIndex]);
+         environmentItem.getControl(RigidBodyControl.class).setKinematic(true);
          bulletAppState.getPhysicsSpace().add(environmentCollision[environmentCollisionIndex]);
       
          environmentCollisionIndex++;
-         */
 
         room.attachChild(environmentItem);
     }
@@ -868,11 +869,14 @@ public class Sagacity extends SimpleApplication
         inputManager.addMapping("PlayerUp", new KeyTrigger(KeyInput.KEY_W));
         inputManager.addMapping("PlayerRight", new KeyTrigger(KeyInput.KEY_D));
         inputManager.addMapping("PlayerDown", new KeyTrigger(KeyInput.KEY_S));
+        
+        inputManager.addMapping("IncreaseSpeed", new KeyTrigger(KeyInput.KEY_0));
+        inputManager.addMapping("DecreaseSpeed", new KeyTrigger(KeyInput.KEY_9));
 
         inputManager.addMapping("IgnoreCollision", new KeyTrigger(KeyInput.KEY_RCONTROL));
 
         inputManager.addListener(actionListener, "Zoom", "CameraReset", "IgnoreCollision");
-        inputManager.addListener(analogListener, "CameraLeft", "CameraUp", "CameraRight", "CameraDown", "PlayerLeft", "PlayerUp", "PlayerRight", "PlayerDown");
+        inputManager.addListener(analogListener, "CameraLeft", "CameraUp", "CameraRight", "CameraDown", "PlayerLeft", "PlayerUp", "PlayerRight", "PlayerDown", "IncreaseSpeed", "DecreaseSpeed");
     }
     // Action listener is for actions that should only happen once in a given moment
     private ActionListener actionListener = new ActionListener()
@@ -941,45 +945,50 @@ public class Sagacity extends SimpleApplication
             }
             if (name.equals("PlayerLeft") && sage.getAllowLeft())
             {
-                sage.setX(-.1f);
+                sage.setX(-sage.getSpeed());
                 sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
-                // Adding the player to the physical space (allowing for collision)
-                playerCollision = new RigidBodyControl(0f);
-                sage.getNode().getChild("Player").addControl(playerCollision);
-                bulletAppState.getPhysicsSpace().add(playerCollision);
-                camera.setX(-.1f);
+                
+                camera.setX(-sage.getSpeed());
                 camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
             }
             if (name.equals("PlayerUp") && sage.getAllowUp())
             {
-                sage.setZ(-.1f);
+                sage.setZ(-sage.getSpeed());
                 sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
-                playerCollision = new RigidBodyControl(0f);
-                sage.getNode().getChild("Player").addControl(playerCollision);
-                bulletAppState.getPhysicsSpace().add(playerCollision);
-                camera.setZ(-.1f);
+                
+                camera.setZ(-sage.getSpeed());
                 camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
             }
             if (name.equals("PlayerRight") && sage.getAllowRight())
             {
-                sage.setX(.1f);
+                sage.setX(sage.getSpeed());
                 sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
-                playerCollision = new RigidBodyControl(0f);
-                sage.getNode().getChild("Player").addControl(playerCollision);
-                bulletAppState.getPhysicsSpace().add(playerCollision);
-                camera.setX(.1f);
+                
+                camera.setX(sage.getSpeed());
                 camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
 
             }
             if (name.equals("PlayerDown") && sage.getAllowDown())
             {
-                sage.setZ(.1f);
+                sage.setZ(sage.getSpeed());
                 sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
-                playerCollision = new RigidBodyControl(0f);
-                sage.getNode().getChild("Player").addControl(playerCollision);
-                bulletAppState.getPhysicsSpace().add(playerCollision);
-                camera.setZ(.1f);
+                
+                camera.setZ(sage.getSpeed());
                 camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
+            }
+            if (name.equals("IncreaseSpeed"))
+            {
+                if(sage.getSpeed() < 1f)
+                {
+                    sage.setSpeed(.1f);
+                }
+            }
+            if (name.equals("DecreaseSpeed"))
+            {
+                if(sage.getSpeed() > .1f)
+                {
+                    sage.setSpeed(-.1f);
+                }
             }
         }
     };

@@ -11,7 +11,9 @@ public class Player {
   private float x;
   private float y;
   private float z;
-            
+  
+  private float playerSpeed;
+  
   private boolean allowLeft;
   private boolean allowRight;
   private boolean allowUp;
@@ -28,7 +30,9 @@ public class Player {
     x = 0;
     y = 5;
     z = 0;  
-            
+       
+    playerSpeed = .1f;
+    
     allowLeft = true;
     allowRight = true;
     allowUp = true;
@@ -70,6 +74,16 @@ public class Player {
   public float getZ()
   {
       return z;
+  }
+  
+  public void setSpeed(float speed)
+  {
+      playerSpeed += speed;
+  }
+  
+  public float getSpeed()
+  {
+      return playerSpeed;
   }
   
   public void setZ(float newZ)
