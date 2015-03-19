@@ -2,6 +2,7 @@ package jme3project.sagacity;
 
 import com.jme3.app.SimpleApplication;
 import com.jme3.bullet.BulletAppState;
+import com.jme3.bullet.control.BetterCharacterControl;
 import com.jme3.bullet.control.RigidBodyControl;
 import com.jme3.collision.CollisionResults;
 import com.jme3.input.KeyInput;
@@ -54,6 +55,7 @@ public class Sagacity extends SimpleApplication
     private RigidBodyControl floorCollision[];
     private RigidBodyControl environmentCollision[];
     private RigidBodyControl playerCollision;
+    private BetterCharacterControl playerControl;
     private Quaternion rotation = new Quaternion();
     private Player sage = new Player();
     private Camera camera = new Camera(rootNode);
@@ -71,17 +73,42 @@ public class Sagacity extends SimpleApplication
     public void simpleInitApp()
     {
         stateManager.attach(bulletAppState);
+        //bulletAppState.setDebugEnabled(true);
         initKeys();
         makeFloor();
-        makePlayer();
+        //makePlayer();
+        makeCharacterController();
         makeEnvironment();
         setupCamera(rootNode, 0, 750, 35);
         initLight();
     }
+    
+    protected void makeCharacterController()
+    {
+        results = new CollisionResults();
+        player = new Node();
+        sage.setNode(player);
+        sage.getNode().setLocalTranslation(rootNode.getLocalTranslation());
+
+        Spatial playerBox = assetManager.loadModel("Models/Sacboy.j3o");
+        playerBox.setLocalTranslation(0f, 7f, 0f);
+        playerBox.setName("Player");
+        Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        mat.setColor("Color", ColorRGBA.Magenta);
+        playerBox.setMaterial(mat);
+        sage.getNode().attachChild(playerBox);
+        
+        playerControl = new BetterCharacterControl(1.5f, 6f, 1f);
+        sage.getNode().addControl(playerControl);
+        
+        bulletAppState.getPhysicsSpace().add(playerControl); 
+        bulletAppState.getPhysicsSpace().addAll(sage.getNode());
+        
+        rootNode.attachChild(sage.getNode());
+    }
 
     protected void makePlayer()
     {
-        results = new CollisionResults();
         sage.setNode(rootNode);
         sage.getNode().setLocalTranslation(rootNode.getLocalTranslation());
 
@@ -93,6 +120,7 @@ public class Sagacity extends SimpleApplication
         playerBox.setMaterial(mat);
         sage.getNode().attachChild(playerBox);
 
+        
 
         // Adding the player to the physical space (allowing for collision)
         playerCollision = new RigidBodyControl(0.1f);
@@ -316,6 +344,7 @@ public class Sagacity extends SimpleApplication
         room.attachChild(floor);
         floorCollision[roomNum] = new RigidBodyControl(0.0f);
         floor.addControl(floorCollision[roomNum]);
+        floor.getControl(RigidBodyControl.class).setKinematic(true);
         bulletAppState.getPhysicsSpace().add(floorCollision[roomNum]);
     }
 
@@ -338,14 +367,16 @@ public class Sagacity extends SimpleApplication
             room.attachChild(leftWall[i]);
             room.attachChild(rightWall[i]);
             // Adding the wall to the physical space
-            wallCollision[wallCollisionIndex] = new RigidBodyControl(0.0f);
+            wallCollision[wallCollisionIndex] = new RigidBodyControl(1.0f);
             leftWall[i].addControl(wallCollision[wallCollisionIndex]);
+            leftWall[i].getControl(RigidBodyControl.class).setKinematic(true);
             bulletAppState.getPhysicsSpace().add(wallCollision[wallCollisionIndex]);
 
             wallCollisionIndex++;
 
-            wallCollision[wallCollisionIndex] = new RigidBodyControl(0.0f);
+            wallCollision[wallCollisionIndex] = new RigidBodyControl(1.0f);
             rightWall[i].addControl(wallCollision[wallCollisionIndex]);
+            rightWall[i].getControl(RigidBodyControl.class).setKinematic(true);
             bulletAppState.getPhysicsSpace().add(wallCollision[wallCollisionIndex]);
 
             wallCollisionIndex++;
@@ -357,14 +388,16 @@ public class Sagacity extends SimpleApplication
             room.attachChild(topWall[i]);
             room.attachChild(bottomWall[i]);
             // Adding the wall to the physical space
-            wallCollision[wallCollisionIndex] = new RigidBodyControl(0.0f);
+            wallCollision[wallCollisionIndex] = new RigidBodyControl(1.0f);
             topWall[i].addControl(wallCollision[wallCollisionIndex]);
+            topWall[i].getControl(RigidBodyControl.class).setKinematic(true);
             bulletAppState.getPhysicsSpace().add(wallCollision[wallCollisionIndex]);
 
             wallCollisionIndex++;
 
-            wallCollision[wallCollisionIndex] = new RigidBodyControl(0.0f);
+            wallCollision[wallCollisionIndex] = new RigidBodyControl(1.0f);
             bottomWall[i].addControl(wallCollision[wallCollisionIndex]);
+            bottomWall[i].getControl(RigidBodyControl.class).setKinematic(true);
             bulletAppState.getPhysicsSpace().add(wallCollision[wallCollisionIndex]);
 
             wallCollisionIndex++;
@@ -963,8 +996,9 @@ public class Sagacity extends SimpleApplication
                 // Setting the character facing rotation angle
                 rotation.fromAngleAxis(FastMath.PI * 2, new Vector3f(0,1,0));
                 sage.getNode().getChild("Player").setLocalRotation(rotation);
-                
                 sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
+                
+                //playerControl.warp(sage.getNode().getChild("Player").getLocalTranslation());
                 
                 camera.setZ(-sage.getSpeed());
                 camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
@@ -1011,13 +1045,10 @@ public class Sagacity extends SimpleApplication
             }
         }
     };
-    /*@Override
+    /*
+    @Override
      public void simpleUpdate(float tpf) 
      {
-     if(!ignoreCollision)
-     {
-     checkPlayerCollision();
-     }
-     //renderNearestRooms();
+         
      }*/
 }
