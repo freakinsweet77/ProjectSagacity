@@ -78,7 +78,7 @@ public class Sagacity extends SimpleApplication
         makeFloor();
         //makePlayer();
         makeCharacterController();
-        makeEnvironment();
+        //makeEnvironment();
         setupCamera(rootNode, 0, 750, 35);
         initLight();
     }
@@ -99,7 +99,7 @@ public class Sagacity extends SimpleApplication
         sage.getNode().attachChild(playerBox);
         
         playerControl = new BetterCharacterControl(1.5f, 6f, 1f);
-        sage.getNode().addControl(playerControl);
+        sage.getNode().getChild("Player").addControl(playerControl);
         
         bulletAppState.getPhysicsSpace().add(playerControl); 
         bulletAppState.getPhysicsSpace().addAll(sage.getNode());
@@ -125,11 +125,13 @@ public class Sagacity extends SimpleApplication
         // Adding the player to the physical space (allowing for collision)
         playerCollision = new RigidBodyControl(0.1f);
         playerBox.addControl(playerCollision);
-        playerBox.getControl(RigidBodyControl.class).setKinematic(true);
+        playerBox.getControl(RigidBodyControl.class).setKinematic(false);
         bulletAppState.getPhysicsSpace().add(playerCollision);
 
         //playerRay = new Ray(player.getChild("Player").getLocalTranslation(), rootNode.getChild("Top Wall 2").getLocalTranslation());
         //playerRay.setLimit(.00001f);
+        
+        
         rootNode.attachChild(sage.getNode());
     }
 
@@ -367,14 +369,14 @@ public class Sagacity extends SimpleApplication
             room.attachChild(leftWall[i]);
             room.attachChild(rightWall[i]);
             // Adding the wall to the physical space
-            wallCollision[wallCollisionIndex] = new RigidBodyControl(1.0f);
+            wallCollision[wallCollisionIndex] = new RigidBodyControl(100.0f);
             leftWall[i].addControl(wallCollision[wallCollisionIndex]);
             leftWall[i].getControl(RigidBodyControl.class).setKinematic(true);
             bulletAppState.getPhysicsSpace().add(wallCollision[wallCollisionIndex]);
 
             wallCollisionIndex++;
 
-            wallCollision[wallCollisionIndex] = new RigidBodyControl(1.0f);
+            wallCollision[wallCollisionIndex] = new RigidBodyControl(100.0f);
             rightWall[i].addControl(wallCollision[wallCollisionIndex]);
             rightWall[i].getControl(RigidBodyControl.class).setKinematic(true);
             bulletAppState.getPhysicsSpace().add(wallCollision[wallCollisionIndex]);
@@ -388,14 +390,14 @@ public class Sagacity extends SimpleApplication
             room.attachChild(topWall[i]);
             room.attachChild(bottomWall[i]);
             // Adding the wall to the physical space
-            wallCollision[wallCollisionIndex] = new RigidBodyControl(1.0f);
+            wallCollision[wallCollisionIndex] = new RigidBodyControl(100.0f);
             topWall[i].addControl(wallCollision[wallCollisionIndex]);
             topWall[i].getControl(RigidBodyControl.class).setKinematic(true);
             bulletAppState.getPhysicsSpace().add(wallCollision[wallCollisionIndex]);
 
             wallCollisionIndex++;
 
-            wallCollision[wallCollisionIndex] = new RigidBodyControl(1.0f);
+            wallCollision[wallCollisionIndex] = new RigidBodyControl(100.0f);
             bottomWall[i].addControl(wallCollision[wallCollisionIndex]);
             bottomWall[i].getControl(RigidBodyControl.class).setKinematic(true);
             bulletAppState.getPhysicsSpace().add(wallCollision[wallCollisionIndex]);
@@ -984,7 +986,9 @@ public class Sagacity extends SimpleApplication
                 rotation.fromAngleAxis(FastMath.PI/2, new Vector3f(0,1,0));
                 sage.getNode().getChild("Player").setLocalRotation(rotation);
                 
-                sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
+                playerControl.warp(new Vector3f(sage.getX(), sage.getY(), sage.getZ()));
+                
+                //sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
                 
                 camera.setX(-sage.getSpeed());
                 camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
@@ -996,9 +1000,10 @@ public class Sagacity extends SimpleApplication
                 // Setting the character facing rotation angle
                 rotation.fromAngleAxis(FastMath.PI * 2, new Vector3f(0,1,0));
                 sage.getNode().getChild("Player").setLocalRotation(rotation);
-                sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
                 
-                //playerControl.warp(sage.getNode().getChild("Player").getLocalTranslation());
+                playerControl.warp(new Vector3f(sage.getX(), sage.getY(), sage.getZ()));
+                
+                //sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
                 
                 camera.setZ(-sage.getSpeed());
                 camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
@@ -1011,7 +1016,9 @@ public class Sagacity extends SimpleApplication
                 rotation.fromAngleAxis(FastMath.PI * 3 / 2, new Vector3f(0,1,0));
                 sage.getNode().getChild("Player").setLocalRotation(rotation);
                 
-                sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
+                playerControl.warp(new Vector3f(sage.getX(), sage.getY(), sage.getZ()));
+                
+                //sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
                 
                 camera.setX(sage.getSpeed());
                 camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
@@ -1020,11 +1027,16 @@ public class Sagacity extends SimpleApplication
             if (name.equals("PlayerDown") && sage.getAllowDown())
             {
                 sage.setZ(sage.getSpeed());
+                
                 sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
                 
                 // Setting the character facing rotation angle
                 rotation.fromAngleAxis(FastMath.PI, new Vector3f(0,1,0));
                 sage.getNode().getChild("Player").setLocalRotation(rotation);
+                
+                playerControl.warp(new Vector3f(sage.getX(), sage.getY(), sage.getZ()));
+                
+                //sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
                 
                 camera.setZ(sage.getSpeed());
                 camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
@@ -1045,10 +1057,9 @@ public class Sagacity extends SimpleApplication
             }
         }
     };
-    /*
     @Override
      public void simpleUpdate(float tpf) 
      {
          
-     }*/
+     }
 }
