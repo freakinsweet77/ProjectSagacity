@@ -78,7 +78,7 @@ public class Sagacity extends SimpleApplication
         makeFloor();
         //makePlayer();
         makeCharacterController();
-        //makeEnvironment();
+        makeEnvironment();
         setupCamera(rootNode, 0, 750, 35);
         initLight();
     }
@@ -94,11 +94,12 @@ public class Sagacity extends SimpleApplication
         playerBox.setLocalTranslation(0f, 7f, 0f);
         playerBox.setName("Player");
         Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-        mat.setColor("Color", ColorRGBA.Magenta);
+        mat.setColor("Color", ColorRGBA.Cyan);
         playerBox.setMaterial(mat);
         sage.getNode().attachChild(playerBox);
         
-        playerControl = new BetterCharacterControl(1.5f, 6f, 1f);
+        // Width, height, weight for BCC params
+        playerControl = new BetterCharacterControl(1.5f, 6f, 6f);
         sage.getNode().getChild("Player").addControl(playerControl);
         
         bulletAppState.getPhysicsSpace().add(playerControl); 
@@ -485,7 +486,7 @@ public class Sagacity extends SimpleApplication
             for (int col = 1; col <= roomGridHeight; col++)
             {
                 // Gives a 20% chance for an object to be placed in each location
-                random = getRandom(5);
+                random = getRandom(20);
 
                 if (random == 1) // 1 is an arbitrary 'magic number'
                 {
@@ -503,7 +504,7 @@ public class Sagacity extends SimpleApplication
             {
                 for (int col = 2; col <= roomGridHeight; col++)
                 {
-                    random = getRandom(5);
+                    random = getRandom(20);
 
                     if (random == 1) // 1 is an arbitrary 'magic number'
                     {
@@ -532,7 +533,7 @@ public class Sagacity extends SimpleApplication
                 {
                     xLocation = getRoomItemXLocation(row);
                     zLocation = getRoomItemZLocation(col);
-                    makeEnvironmentItem(rootNode, xLocation, zLocation);
+                    makeEnvironmentItem(rootNode, xLocation, zLocation, "Rock1/Rock1.j3o", "RockTexture.jpg");
                 }
             }
         }
@@ -547,7 +548,7 @@ public class Sagacity extends SimpleApplication
                     {
                         xLocation = getRoomItemXLocation(row);
                         zLocation = getRoomItemZLocation(col);
-                        makeEnvironmentItem(room, xLocation, zLocation);
+                        makeEnvironmentItem(room, xLocation, zLocation, "Rock1/Rock1.j3o", "RockTexture.jpg");
                     }
                 }
             }
@@ -588,16 +589,15 @@ public class Sagacity extends SimpleApplication
         return zLocation;
     }
 
-    protected void makeEnvironmentItem(Node room, double xLocation, double zLocation)
+    protected void makeEnvironmentItem(Node room, double xLocation, double zLocation, String model, String texture)
     {
-        Sphere sphere = new Sphere(32, 32, 2.0f);
-        Geometry environmentItem = new Geometry("EnvironmentObject", sphere);
+        Spatial environmentItem = assetManager.loadModel("Models/" + model);
         environmentItem.setLocalTranslation((float) xLocation, 2f, (float) zLocation);
-        TangentBinormalGenerator.generate(sphere);
-        //Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         //mat.setColor("Color", ColorRGBA.Brown);
-        environmentItem.setMaterial((Material) assetManager.loadMaterial("Materials/Rock.j3m"));
-
+        Texture environmentTexture = assetManager.loadTexture("Textures/" + texture);
+        mat.setTexture("ColorMap", environmentTexture);
+        environmentItem.setMaterial(mat);
         
          environmentCollision[environmentCollisionIndex] = new RigidBodyControl(1.0f);
          environmentItem.addControl(environmentCollision[environmentCollisionIndex]);
