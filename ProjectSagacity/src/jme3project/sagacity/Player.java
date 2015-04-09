@@ -2,11 +2,14 @@ package jme3project.sagacity;
 
 import com.jme3.math.Ray;
 import com.jme3.scene.Node;
+import com.jme3.bullet.PhysicsSpace;
+import com.jme3.bullet.collision.PhysicsCollisionEvent;
+import com.jme3.bullet.collision.PhysicsCollisionListener;
 
 /**
  * @author Kenton Goodling & Thomas Hippenstiel
  */
-public class Player {
+public class Player implements PhysicsCollisionListener {
     
   private float x;
   private float y;
@@ -18,6 +21,8 @@ public class Player {
   
   private int playerAttack;
   private int playerDefense;
+  
+  private String playerFacing;
   
   private int potionCount;
   
@@ -35,7 +40,7 @@ public class Player {
   public Player()
   {
     x = 0;
-    y = 5;
+    y = 2;
     z = 0;  
        
     playerSpeed = .1f;
@@ -48,12 +53,19 @@ public class Player {
     
     playerDefense = 1;
     
+    playerFacing = "up";
+    
     allowLeft = true;
     allowRight = true;
     allowUp = true;
     allowDown = true;
     
     ignoreCollision = false; //for debugging purposes
+  }
+  // Needs work
+  public void collision(PhysicsCollisionEvent event) 
+  {
+      // This is where collision events will go e.g. being damaged when touching an enemy
   }
   
   public Ray getRay()
@@ -139,6 +151,16 @@ public class Player {
   public int getDefense()
   {
       return playerDefense;
+  }
+  
+  public void setFacing(String facing)
+  {
+      playerFacing = facing;
+  }
+  
+  public String getFacing()
+  {
+      return playerFacing;
   }
   
   public void setZ(float newZ)
