@@ -4,7 +4,7 @@ import com.jme3.math.Ray;
 import com.jme3.scene.Node;
 
 /**
- * @author Kenton Goodling
+ * @author Kenton Goodling & Thomas Hippenstiel
  */
 public class Player {
     
@@ -15,6 +15,11 @@ public class Player {
   private float playerSpeed;
   
   private float playerHealth;
+  
+  private int playerAttack;
+  private int playerDefense;
+  
+  private int potionCount;
   
   private boolean allowLeft;
   private boolean allowRight;
@@ -36,6 +41,12 @@ public class Player {
     playerSpeed = .1f;
     
     playerHealth = 100;
+    
+    potionCount = 1;
+    
+    playerAttack = 1;
+    
+    playerDefense = 1;
     
     allowLeft = true;
     allowRight = true;
@@ -98,6 +109,36 @@ public class Player {
   public float getHealth()
   {
       return playerHealth;
+  }
+  
+  public void setPotions(int potion)
+  {
+      potionCount += potion;
+  }
+  
+  public int getPotions()
+  {
+      return potionCount;
+  }
+  
+  public void setAttack(int attack)
+  {
+      playerAttack += attack;
+  }
+  
+  public int getAttack()
+  {
+      return playerAttack;
+  }
+  
+  public void setDefense(int defense)
+  {
+      playerDefense += defense;
+  }
+  
+  public int getDefense()
+  {
+      return playerDefense;
   }
   
   public void setZ(float newZ)

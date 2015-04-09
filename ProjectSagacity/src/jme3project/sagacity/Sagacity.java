@@ -165,9 +165,9 @@ public class Sagacity extends SimpleApplication
         mat.setColor("Color", ColorRGBA.LightGray);
         playerBox.setMaterial(mat);
         sage.getNode().attachChild(playerBox);
-        
         // Width, height, weight for BCC params
         playerControl = new BetterCharacterControl(1.5f, 12f, 6f);
+        playerControl.warp(new Vector3f(0, -3f, 0));
         sage.getNode().getChild("Player").addControl(playerControl);
         
         bulletAppState.getPhysicsSpace().add(playerControl); 
@@ -176,7 +176,7 @@ public class Sagacity extends SimpleApplication
         rootNode.attachChild(sage.getNode());
     }
     
-    protected void updateHealthBar()
+    protected void updateHUD()
     {
         guiNode.detachAllChildren();
         
@@ -204,6 +204,24 @@ public class Sagacity extends SimpleApplication
         healthbar.setLocalTranslation(25, 25, 0);
         
         guiNode.attachChild(healthbar);
+        
+        guiFont = assetManager.loadFont("Interface/Fonts/Default.fnt");
+        BitmapText numPotions = new BitmapText(guiFont, false);
+        numPotions.setColor(ColorRGBA.White);
+        numPotions.setSize(24);
+        numPotions.setText(Integer.toString(sage.getPotions()));
+        numPotions.setLocalTranslation(430f, 50f, 0);
+        
+        guiNode.attachChild(numPotions);
+        
+        Geometry potionIcon = new Geometry("PotionIcon", new Quad(30f, 30f));
+        Material mat4 = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        Texture potionTexture = assetManager.loadTexture("Textures/potionImage.png");
+        mat4.setTexture("ColorMap", potionTexture);
+        potionIcon.setMaterial(mat4);
+        potionIcon.setLocalTranslation(450f, 20f, 0);
+        
+        guiNode.attachChild(potionIcon);
     }
     
     // Method for all character status related updates - e.g. isAlive, isPoisoned, isAsleep (if we ever do anything like this
@@ -1016,10 +1034,12 @@ public class Sagacity extends SimpleApplication
         
         inputManager.addMapping("IncreaseHealth", new KeyTrigger(KeyInput.KEY_8));
         inputManager.addMapping("DecreaseHealth", new KeyTrigger(KeyInput.KEY_7));
+        
+        inputManager.addMapping("UsePotion", new KeyTrigger(KeyInput.KEY_M));
 
         inputManager.addMapping("IgnoreCollision", new KeyTrigger(KeyInput.KEY_RCONTROL));
 
-        inputManager.addListener(actionListener, "Zoom", "CameraReset", "IgnoreCollision", "StartGame");
+        inputManager.addListener(actionListener, "Zoom", "CameraReset", "IgnoreCollision", "StartGame", "UsePotion");
         inputManager.addListener(analogListener, "CameraLeft", "CameraUp", "CameraRight", "CameraDown", "PlayerLeft", "PlayerUp", "PlayerRight", "PlayerDown", "IncreaseSpeed", "DecreaseSpeed", "IncreaseHealth", "DecreaseHealth");
     }
     // Action listener is for actions that should only happen once in a given moment
@@ -1056,6 +1076,12 @@ public class Sagacity extends SimpleApplication
                         startGame();
                         atTitleScreen = false;
                     }
+                }
+                if (name.equals("UsePotion") && !keyPressed && sage.getPotions() > 0)
+                {
+                    // Removing a potion and fully healing the player
+                    sage.setPotions(-1);
+                    sage.setHealth(100 - sage.getHealth());
                 }
             }
             else if(gameOver) // yes, it is redundant - just for readability
@@ -1208,7 +1234,7 @@ public class Sagacity extends SimpleApplication
      {
          if(!gameOver && !atTitleScreen)
          {
-            updateHealthBar();
+            updateHUD();
             updateCharacterStatus();
          }
          if(gameOver)
