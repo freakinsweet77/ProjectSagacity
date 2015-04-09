@@ -5,6 +5,7 @@ import com.jme3.bullet.BulletAppState;
 import com.jme3.bullet.control.BetterCharacterControl;
 import com.jme3.bullet.control.RigidBodyControl;
 import com.jme3.collision.CollisionResults;
+import com.jme3.font.BitmapText;
 import com.jme3.input.KeyInput;
 import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.AnalogListener;
@@ -23,7 +24,7 @@ import com.jme3.scene.CameraNode;
 import com.jme3.math.Vector3f;
 import com.jme3.scene.Spatial;
 import com.jme3.scene.control.LightControl;
-import com.jme3.scene.shape.Sphere;
+import com.jme3.scene.shape.Quad;
 import com.jme3.texture.Texture;
 import com.jme3.util.TangentBinormalGenerator;
 import java.util.Random;
@@ -57,6 +58,8 @@ public class Sagacity extends SimpleApplication
     private RigidBodyControl playerCollision;
     private BetterCharacterControl playerControl;
     private Quaternion rotation = new Quaternion();
+    private boolean gameOver = false;
+    private boolean atTitleScreen = true;
     private Player sage = new Player();
     private Camera camera = new Camera(rootNode);
 
@@ -72,15 +75,80 @@ public class Sagacity extends SimpleApplication
     @Override
     public void simpleInitApp()
     {
+        initKeys();
+        displayTitleScreen();
+    }
+    
+    protected void startGame()
+    {
         stateManager.attach(bulletAppState);
         //bulletAppState.setDebugEnabled(true);
-        initKeys();
         makeFloor();
-        //makePlayer();
         makeCharacterController();
-        makeEnvironment();
+        //makeEnvironment();
         setupCamera(rootNode, 0, 750, 35);
         initLight();
+    }
+    
+    protected void resetGame()
+    {
+        rootNode.detachAllChildren();
+        rootNode.removeLight(ambient);
+        rootNode.removeLight(roomLight);
+        stateManager.detach(bulletAppState);
+        sage = new Player();
+        camera = new Camera(rootNode);
+    }
+    
+    protected void displayTitleScreen()
+    {
+        guiNode.detachAllChildren();
+        
+        Geometry titleScreen = new Geometry("TitleScreen", new Quad(getScreenWidth(), getScreenHeight()));
+        Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        mat.setColor("Color", ColorRGBA.White);
+        titleScreen.setMaterial(mat);
+        titleScreen.setLocalTranslation(0, 0, 0);
+        
+        guiFont = assetManager.loadFont("Interface/Fonts/Default.fnt");
+        BitmapText titleText = new BitmapText(guiFont, false);
+        titleText.setColor(ColorRGBA.Black);
+        titleText.setSize(36);
+        titleText.setText("Path of Enlightenment:\nThe Climb to Sagacity");
+        titleText.setLocalTranslation(getScreenWidth() / 2.65f, getScreenHeight() / 1.8f, 0);
+        
+        BitmapText continueText = new BitmapText(guiFont, false);
+        continueText.setColor(ColorRGBA.LightGray);
+        continueText.setSize(guiFont.getCharSet().getRenderedSize());
+        continueText.setText("Press SPACE to continue...");
+        continueText.setLocalTranslation(getScreenWidth() / 2.4f, getScreenHeight() / 2.5f, 0);
+        
+        guiNode.attachChild(titleScreen);
+        guiNode.attachChild(titleText);
+        guiNode.attachChild(continueText);
+    }
+    
+    protected void displayGameOver()
+    {
+        // Removing all children so the screen only displays GAME OVER
+        guiNode.detachAllChildren();
+        
+        Geometry gameOverScreen = new Geometry("GameOverScreen", new Quad(getScreenWidth(), getScreenHeight()));
+        Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        mat.setColor("Color", ColorRGBA.Black);
+        gameOverScreen.setMaterial(mat);
+        gameOverScreen.setLocalTranslation(0, 0, 0);
+        
+        
+        // placing the GAME OVER message approximately in the center of the screen
+        guiFont = assetManager.loadFont("Interface/Fonts/Default.fnt");
+        BitmapText gameOverText = new BitmapText(guiFont, false);
+        gameOverText.setSize(guiFont.getCharSet().getRenderedSize());
+        gameOverText.setText("GAME OVER");
+        gameOverText.setLocalTranslation(getScreenWidth() / 2 - 20, getScreenHeight() / 2, 0);
+        
+        guiNode.attachChild(gameOverScreen);
+        guiNode.attachChild(gameOverText);
     }
     
     protected void makeCharacterController()
@@ -91,15 +159,15 @@ public class Sagacity extends SimpleApplication
         sage.getNode().setLocalTranslation(rootNode.getLocalTranslation());
 
         Spatial playerBox = assetManager.loadModel("Models/Sacboy.j3o");
-        playerBox.setLocalTranslation(0f, 7f, 0f);
+        playerBox.move(0f, 6f, 0f);
         playerBox.setName("Player");
         Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-        mat.setColor("Color", ColorRGBA.Cyan);
+        mat.setColor("Color", ColorRGBA.LightGray);
         playerBox.setMaterial(mat);
         sage.getNode().attachChild(playerBox);
         
         // Width, height, weight for BCC params
-        playerControl = new BetterCharacterControl(1.5f, 6f, 6f);
+        playerControl = new BetterCharacterControl(1.5f, 12f, 6f);
         sage.getNode().getChild("Player").addControl(playerControl);
         
         bulletAppState.getPhysicsSpace().add(playerControl); 
@@ -107,7 +175,46 @@ public class Sagacity extends SimpleApplication
         
         rootNode.attachChild(sage.getNode());
     }
-
+    
+    protected void updateHealthBar()
+    {
+        guiNode.detachAllChildren();
+        
+        // Larger than the health indicator within the healthbar
+        Geometry healthbarOutline = new Geometry("HealthbarOutline", new Quad(406f, 26f));
+        Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        mat.setColor("Color", ColorRGBA.White);
+        healthbarOutline.setMaterial(mat);
+        healthbarOutline.setLocalTranslation(20, 20, 0);
+        
+        guiNode.attachChild(healthbarOutline);
+        
+        Geometry healthbarBackground = new Geometry("HealthbarBackground", new Quad(400f, 20f));
+        Material mat2 = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        mat2.setColor("Color", ColorRGBA.Black);
+        healthbarBackground.setMaterial(mat2);
+        healthbarBackground.setLocalTranslation(25, 25, 0);
+       
+        guiNode.attachChild(healthbarBackground);
+        
+        Geometry healthbar = new Geometry("Healthbar", new Quad(sage.getHealth() * 4, 20f));
+        Material mat3 = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        mat3.setColor("Color", ColorRGBA.Red);
+        healthbar.setMaterial(mat3);
+        healthbar.setLocalTranslation(25, 25, 0);
+        
+        guiNode.attachChild(healthbar);
+    }
+    
+    // Method for all character status related updates - e.g. isAlive, isPoisoned, isAsleep (if we ever do anything like this
+    protected void updateCharacterStatus()
+    {
+        if(sage.getHealth() <= 0)
+        {
+            gameOver = true;
+        }
+    }
+    // UNUSED METHOD
     protected void makePlayer()
     {
         sage.setNode(rootNode);
@@ -120,9 +227,7 @@ public class Sagacity extends SimpleApplication
         mat.setColor("Color", ColorRGBA.Magenta);
         playerBox.setMaterial(mat);
         sage.getNode().attachChild(playerBox);
-
         
-
         // Adding the player to the physical space (allowing for collision)
         playerCollision = new RigidBodyControl(0.1f);
         playerBox.addControl(playerCollision);
@@ -131,7 +236,6 @@ public class Sagacity extends SimpleApplication
 
         //playerRay = new Ray(player.getChild("Player").getLocalTranslation(), rootNode.getChild("Top Wall 2").getLocalTranslation());
         //playerRay.setLimit(.00001f);
-        
         
         rootNode.attachChild(sage.getNode());
     }
@@ -893,6 +997,8 @@ public class Sagacity extends SimpleApplication
     // Initializes key bindings - we will use booleans to create game states
     private void initKeys()
     {
+        inputManager.addMapping("StartGame", new KeyTrigger(KeyInput.KEY_SPACE));
+        
         inputManager.addMapping("Zoom", new KeyTrigger(KeyInput.KEY_Z));
         inputManager.addMapping("CameraLeft", new KeyTrigger(KeyInput.KEY_LEFT));
         inputManager.addMapping("CameraUp", new KeyTrigger(KeyInput.KEY_UP));
@@ -907,50 +1013,62 @@ public class Sagacity extends SimpleApplication
         
         inputManager.addMapping("IncreaseSpeed", new KeyTrigger(KeyInput.KEY_0));
         inputManager.addMapping("DecreaseSpeed", new KeyTrigger(KeyInput.KEY_9));
+        
+        inputManager.addMapping("IncreaseHealth", new KeyTrigger(KeyInput.KEY_8));
+        inputManager.addMapping("DecreaseHealth", new KeyTrigger(KeyInput.KEY_7));
 
         inputManager.addMapping("IgnoreCollision", new KeyTrigger(KeyInput.KEY_RCONTROL));
 
-        inputManager.addListener(actionListener, "Zoom", "CameraReset", "IgnoreCollision");
-        inputManager.addListener(analogListener, "CameraLeft", "CameraUp", "CameraRight", "CameraDown", "PlayerLeft", "PlayerUp", "PlayerRight", "PlayerDown", "IncreaseSpeed", "DecreaseSpeed");
+        inputManager.addListener(actionListener, "Zoom", "CameraReset", "IgnoreCollision", "StartGame");
+        inputManager.addListener(analogListener, "CameraLeft", "CameraUp", "CameraRight", "CameraDown", "PlayerLeft", "PlayerUp", "PlayerRight", "PlayerDown", "IncreaseSpeed", "DecreaseSpeed", "IncreaseHealth", "DecreaseHealth");
     }
     // Action listener is for actions that should only happen once in a given moment
     private ActionListener actionListener = new ActionListener()
     {
         public void onAction(String name, boolean keyPressed, float tpf)
         {
-            if (name.equals("Zoom") && !keyPressed)
+            if(!gameOver)
             {
-                if (camera.getY() == 65)
+                if (name.equals("Zoom") && !keyPressed)
                 {
-                    camera.setY(750);
-                    camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
-                } else
+                    if (camera.getY() == 65)
+                    {
+                        camera.setY(750);
+                        camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
+                    } 
+                    else
+                    {
+                        camera.setY(65);
+                        camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
+                    }
+                }
+                if (name.equals("CameraReset") && !keyPressed)
                 {
-                    camera.setY(65);
+                    camera.setX(0);
+                    camera.setZ(35);
                     camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
                 }
+                if(atTitleScreen)
+                {
+                    // when at the title screen and space is pressed, start the game
+                    if (name.equals("StartGame") && !keyPressed)
+                    {
+                        startGame();
+                        atTitleScreen = false;
+                    }
+                }
             }
-            if (name.equals("CameraReset") && !keyPressed)
+            else if(gameOver) // yes, it is redundant - just for readability
             {
-                camera.setX(0);
-                camera.setZ(35);
-                camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
+                if (name.equals("StartGame") && !keyPressed)
+                {
+                    resetGame();
+                    // Enabling the title screen and disabling the game over screen
+                    atTitleScreen = true;
+                    gameOver = false;
+                }
             }
-            /* if (name.equals("IgnoreCollision")) 
-             {
-             if(!ignoreCollision)
-             {
-             allowLeftMovement = true;
-             allowUpMovement = true;
-             allowDownMovement = true;
-             allowRightMovement = true;
-             ignoreCollision = true;
-             }
-             else
-             {
-             ignoreCollision = false;
-             }
-             } */
+            
         }
     };
     // Analog listener is for consistent actions that should be able to repeat constantly
@@ -958,108 +1076,148 @@ public class Sagacity extends SimpleApplication
     {
         public void onAnalog(String name, float value, float tpf)
         {
-            if (name.equals("CameraLeft"))
+            if(!gameOver)
             {
-                camera.setX(-5f);
-                camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
-            }
-            if (name.equals("CameraUp"))
-            {
-                camera.setZ(-5f);
-                camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
-            }
-            if (name.equals("CameraRight"))
-            {
-                camera.setX(5f);
-                camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
-            }
-            if (name.equals("CameraDown"))
-            {
-                camera.setZ(5f);
-                camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
-            }
-            if (name.equals("PlayerLeft") && sage.getAllowLeft())
-            {
-                sage.setX(-sage.getSpeed());
-                
-                // Setting the character facing rotation angle
-                rotation.fromAngleAxis(FastMath.PI/2, new Vector3f(0,1,0));
-                sage.getNode().getChild("Player").setLocalRotation(rotation);
-                
-                playerControl.warp(new Vector3f(sage.getX(), sage.getY(), sage.getZ()));
-                
-                //sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
-                
-                camera.setX(-sage.getSpeed());
-                camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
-            }
-            if (name.equals("PlayerUp") && sage.getAllowUp())
-            {
-                sage.setZ(-sage.getSpeed());
-                
-                // Setting the character facing rotation angle
-                rotation.fromAngleAxis(FastMath.PI * 2, new Vector3f(0,1,0));
-                sage.getNode().getChild("Player").setLocalRotation(rotation);
-                
-                playerControl.warp(new Vector3f(sage.getX(), sage.getY(), sage.getZ()));
-                
-                //sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
-                
-                camera.setZ(-sage.getSpeed());
-                camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
-            }
-            if (name.equals("PlayerRight") && sage.getAllowRight())
-            {
-                sage.setX(sage.getSpeed());
-                
-                // Setting the character facing rotation angle
-                rotation.fromAngleAxis(FastMath.PI * 3 / 2, new Vector3f(0,1,0));
-                sage.getNode().getChild("Player").setLocalRotation(rotation);
-                
-                playerControl.warp(new Vector3f(sage.getX(), sage.getY(), sage.getZ()));
-                
-                //sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
-                
-                camera.setX(sage.getSpeed());
-                camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
-
-            }
-            if (name.equals("PlayerDown") && sage.getAllowDown())
-            {
-                sage.setZ(sage.getSpeed());
-                
-                sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
-                
-                // Setting the character facing rotation angle
-                rotation.fromAngleAxis(FastMath.PI, new Vector3f(0,1,0));
-                sage.getNode().getChild("Player").setLocalRotation(rotation);
-                
-                playerControl.warp(new Vector3f(sage.getX(), sage.getY(), sage.getZ()));
-                
-                //sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
-                
-                camera.setZ(sage.getSpeed());
-                camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
-            }
-            if (name.equals("IncreaseSpeed"))
-            {
-                if(sage.getSpeed() < 1f)
+                if (name.equals("CameraLeft"))
                 {
-                    sage.setSpeed(.1f);
+                    camera.setX(-5f);
+                    camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
                 }
-            }
-            if (name.equals("DecreaseSpeed"))
-            {
-                if(sage.getSpeed() > .1f)
+                if (name.equals("CameraUp"))
                 {
-                    sage.setSpeed(-.1f);
+                    camera.setZ(-5f);
+                    camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
+                }
+                if (name.equals("CameraRight"))
+                {
+                    camera.setX(5f);
+                    camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
+                }
+                if (name.equals("CameraDown"))
+                {
+                    camera.setZ(5f);
+                    camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
+                }
+                if (name.equals("PlayerLeft") && sage.getAllowLeft())
+                {
+                    sage.setX(-sage.getSpeed());
+                
+                    // Setting the character facing rotation angle
+                    rotation.fromAngleAxis(FastMath.PI/2, new Vector3f(0,1,0));
+                    sage.getNode().getChild("Player").setLocalRotation(rotation);
+                
+                    playerControl.warp(new Vector3f(sage.getX(), sage.getY(), sage.getZ()));
+                
+                    //sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
+                
+                    camera.setX(-sage.getSpeed());
+                    camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
+                }
+                if (name.equals("PlayerUp") && sage.getAllowUp())
+                {
+                    sage.setZ(-sage.getSpeed());
+                
+                    // Setting the character facing rotation angle
+                    rotation.fromAngleAxis(FastMath.PI * 2, new Vector3f(0,1,0));
+                    sage.getNode().getChild("Player").setLocalRotation(rotation);
+                
+                    playerControl.warp(new Vector3f(sage.getX(), sage.getY(), sage.getZ()));
+                
+                    //sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
+                
+                    camera.setZ(-sage.getSpeed());
+                    camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
+                }
+                if (name.equals("PlayerRight") && sage.getAllowRight())
+                {
+                    sage.setX(sage.getSpeed());
+                
+                    // Setting the character facing rotation angle
+                    rotation.fromAngleAxis(FastMath.PI * 3 / 2, new Vector3f(0,1,0));
+                    sage.getNode().getChild("Player").setLocalRotation(rotation);
+                
+                    playerControl.warp(new Vector3f(sage.getX(), sage.getY(), sage.getZ()));
+                
+                    //sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
+                
+                    camera.setX(sage.getSpeed());
+                    camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
+
+                }
+                if (name.equals("PlayerDown") && sage.getAllowDown())
+                {
+                    sage.setZ(sage.getSpeed());
+                
+                    sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
+                
+                    // Setting the character facing rotation angle
+                    rotation.fromAngleAxis(FastMath.PI, new Vector3f(0,1,0));
+                    sage.getNode().getChild("Player").setLocalRotation(rotation);
+                
+                    playerControl.warp(new Vector3f(sage.getX(), sage.getY(), sage.getZ()));
+                
+                     //sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
+                
+                    camera.setZ(sage.getSpeed());
+                    camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
+                }
+                if (name.equals("IncreaseSpeed"))
+                {
+                    if(sage.getSpeed() < 1f)
+                    {
+                        sage.setSpeed(.1f);
+                    }
+                }
+                if (name.equals("DecreaseSpeed"))
+                {
+                    if(sage.getSpeed() > .1f)
+                    {
+                        sage.setSpeed(-.1f);
+                    }
+                }
+                if (name.equals("IncreaseHealth"))
+                {
+                    if(sage.getHealth() < 100f)
+                    {
+                        sage.setHealth(1f);
+                    }
+                }
+                if (name.equals("DecreaseHealth"))
+                {
+                    if(sage.getHealth() > 0f)
+                    {
+                        sage.setHealth(-1f);
+                    }
                 }
             }
         }
     };
+    
+    protected float getScreenWidth()
+    {
+        return this.settings.getWidth();
+    }
+    
+    protected float getScreenHeight()
+    {
+        return this.settings.getHeight();
+    }
+    
     @Override
      public void simpleUpdate(float tpf) 
      {
-         
+         if(!gameOver && !atTitleScreen)
+         {
+            updateHealthBar();
+            updateCharacterStatus();
+         }
+         if(gameOver)
+         {
+             displayGameOver();
+         }
+         if(atTitleScreen)
+         {
+             displayTitleScreen();
+         }
      }
 }

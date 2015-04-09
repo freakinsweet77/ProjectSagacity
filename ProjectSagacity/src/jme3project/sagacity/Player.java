@@ -14,6 +14,8 @@ public class Player {
   
   private float playerSpeed;
   
+  private float playerHealth;
+  
   private boolean allowLeft;
   private boolean allowRight;
   private boolean allowUp;
@@ -32,6 +34,8 @@ public class Player {
     z = 0;  
        
     playerSpeed = .1f;
+    
+    playerHealth = 100;
     
     allowLeft = true;
     allowRight = true;
@@ -84,6 +88,16 @@ public class Player {
   public float getSpeed()
   {
       return playerSpeed;
+  }
+  
+  public void setHealth(float health)
+  {
+      playerHealth += health;
+  }
+  
+  public float getHealth()
+  {
+      return playerHealth;
   }
   
   public void setZ(float newZ)
