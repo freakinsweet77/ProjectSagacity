@@ -31,6 +31,11 @@ public class Player implements PhysicsCollisionListener {
   private boolean allowUp;
   private boolean allowDown;
   
+  private boolean moveLeft;
+  private boolean moveRight;
+  private boolean moveUp;
+  private boolean moveDown;
+  
   private boolean ignoreCollision; // for debugging purposes
   
   private Ray ray;
@@ -59,6 +64,11 @@ public class Player implements PhysicsCollisionListener {
     allowRight = true;
     allowUp = true;
     allowDown = true;
+    
+    moveLeft = false;
+    moveRight = false;
+    moveUp = false;
+    moveDown = false;
     
     ignoreCollision = false; //for debugging purposes
   }
@@ -218,4 +228,44 @@ public class Player implements PhysicsCollisionListener {
       allowUp = allowed;
   }
   
+  
+  public boolean getMoveRight()
+  {
+      return moveRight;
+  }
+  
+  public void setMoveRight(Boolean move)
+  {
+      moveRight = move;
+  }
+  
+    public boolean getMoveDown()
+  {
+      return moveDown;
+  }
+  
+  public void setMoveDown(Boolean move)
+  {
+      moveDown = move;
+  } 
+  
+    public boolean getMoveLeft()
+  {
+      return moveLeft;
+  }
+  
+  public void setMoveLeft(Boolean move)
+  {
+      moveLeft = move;
+  }
+  
+    public boolean getMoveUp()
+  {
+      return moveUp;
+  }
+  
+  public void setMoveUp(Boolean move)
+  {
+      moveUp = move;
+  }
 }

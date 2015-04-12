@@ -1,0 +1,21 @@
+Material My Material : Common/MatDefs/Light/Lighting.j3md {
+     MaterialParameters {
+        DiffuseMap : Textures/ShortBoyColor.png
+        UseAlpha : true
+        Shininess : 0.0
+        VTangent : false
+        HighQuality : false
+        VertexLighting : false
+        UseVertexColor : false
+        SteepParallax : false
+        UseMaterialColors : false
+        EnvMapAsSphereMap : false
+        SeparateTexCoord : false
+        LowQuality : false
+        HardwareShadows : false
+        AlphaDiscardThreshold : 0.0
+        FilterMode : 0
+     }
+    AdditionalRenderState {
+    }
+}
