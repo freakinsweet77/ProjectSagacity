@@ -15,6 +15,7 @@ import com.jme3.light.AmbientLight;
 import com.jme3.light.DirectionalLight;
 import com.jme3.light.PointLight;
 import com.jme3.material.Material;
+import com.jme3.material.RenderState.BlendMode;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.FastMath;
 import com.jme3.math.Quaternion;
@@ -61,6 +62,7 @@ public class Sagacity extends SimpleApplication
     private Quaternion rotation = new Quaternion();
     private boolean gameOver = false;
     private boolean atTitleScreen = true;
+    private boolean menuOpen = false;
     private Player sage = new Player();
     private Camera camera = new Camera(rootNode);
     
@@ -91,9 +93,10 @@ public class Sagacity extends SimpleApplication
     protected void startGame()
     {
         stateManager.attach(bulletAppState);
-        bulletAppState.setDebugEnabled(true);
+        //bulletAppState.setDebugEnabled(true);
         makeFloor();
         makeCharacterController();
+        makeEnemy();
         makeEnvironment();
         setupCamera(rootNode, 0, 750, 35);
         initLight();
@@ -105,8 +108,9 @@ public class Sagacity extends SimpleApplication
         rootNode.removeLight(ambient);
         rootNode.removeLight(roomLight);
         stateManager.detach(bulletAppState);
-        sage = new Player();
+        sage = new Player(sage.getAttack(), sage.getDefense());
         camera = new Camera(rootNode);
+        initSounds();
     }
     
     protected void displayTitleScreen()
@@ -119,21 +123,23 @@ public class Sagacity extends SimpleApplication
         titleScreen.setMaterial(mat);
         titleScreen.setLocalTranslation(0, 0, 0);
         
-        guiFont = assetManager.loadFont("Interface/Fonts/Default.fnt");
-        BitmapText titleText = new BitmapText(guiFont, false);
-        titleText.setColor(ColorRGBA.Black);
-        titleText.setSize(36);
-        titleText.setText("Path of Enlightenment:\nThe Climb to Sagacity");
-        titleText.setLocalTranslation(getScreenWidth() / 2.65f, getScreenHeight() / 1.8f, 0);
+        Geometry titleBox = new Geometry("TitleBox", new Quad(getScreenWidth() / 1.7f, getScreenHeight() / 1.7f));
+        Material mat2 = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        mat2.setColor("Color", ColorRGBA.White);
+        Texture title = assetManager.loadTexture("Textures/PoE.png");
+        mat2.setTexture("ColorMap", title);
+        titleBox.setMaterial(mat2);
+        titleBox.setLocalTranslation(getScreenWidth() / 4.5f, getScreenHeight() / 3.9f, 0);
         
+        guiFont = assetManager.loadFont("Interface/Fonts/Default.fnt");
         BitmapText continueText = new BitmapText(guiFont, false);
         continueText.setColor(ColorRGBA.LightGray);
         continueText.setSize(guiFont.getCharSet().getRenderedSize());
         continueText.setText("Press SPACE to continue...");
-        continueText.setLocalTranslation(getScreenWidth() / 2.4f, getScreenHeight() / 2.5f, 0);
+        continueText.setLocalTranslation(getScreenWidth() / 2.4f, getScreenHeight() / 4.2f, 0);
         
         guiNode.attachChild(titleScreen);
-        guiNode.attachChild(titleText);
+        guiNode.attachChild(titleBox);
         guiNode.attachChild(continueText);
     }
     
@@ -160,12 +166,55 @@ public class Sagacity extends SimpleApplication
         guiNode.attachChild(gameOverText);
     }
     
+    private void displayMenu()
+    {
+        // Removing all children so the screen only displays GAME OVER
+        
+        Geometry background = new Geometry("MenuBackground", new Quad(getScreenWidth() * (2.0f/3.0f), getScreenHeight() * (2.0f/3.0f)));
+        Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        mat.setColor("Color", new ColorRGBA(0,0.5f,0.5f,0.75f));
+        mat.getAdditionalRenderState().setBlendMode(BlendMode.Alpha);
+        background.setMaterial(mat);
+        background.setLocalTranslation(getScreenWidth() * (0.5f/3.0f), getScreenHeight() * (0.5f/3.0f), 0);
+        
+        Geometry border = new Geometry("MenuBorder", new Quad(getScreenWidth() * (1.90f/3.0f), getScreenHeight() * (1.90f/3.0f)));
+        Material mat2 = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        mat2.setColor("Color", new ColorRGBA(0,0.5f,0.75f,0.75f));
+        mat2.getAdditionalRenderState().setBlendMode(BlendMode.Alpha);
+        border.setMaterial(mat2);
+        border.setLocalTranslation(getScreenWidth() * (0.55f/3.0f), getScreenHeight() * (0.55f/3.0f), 0);
+        
+        Geometry foreground = new Geometry("MenuBorder", new Quad(getScreenWidth() * (1.80f/3.0f), getScreenHeight() * (1.80f/3.0f)));
+        Material mat3 = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        mat3.setColor("Color", new ColorRGBA(0,0.01f,0.05f,0.55f));
+        mat3.getAdditionalRenderState().setBlendMode(BlendMode.Alpha);
+        foreground.setMaterial(mat3);
+        foreground.setLocalTranslation(getScreenWidth() * (0.60f/3.0f), getScreenHeight() * (0.60f/3.0f), 0);
+        
+        
+        // placing the GAME OVER message approximately in the center of the screen
+        guiFont = assetManager.loadFont("Interface/Fonts/Default.fnt");
+        BitmapText nameText = new BitmapText(guiFont, false);
+        nameText.setSize(24);
+        nameText.setText(     "Name:       Kid #1\n"
+                            + "Life:       " + sage.getHealth() + "/100\n"
+                            + "Power:      " + sage.getAttack() + "\n"
+                            + "Defense:    " + sage.getDefense() + "\n");
+        nameText.setLocalTranslation(getScreenWidth() * (0.62f/3.0f), getScreenHeight() * (2.36f/3.0f), 0);
+        
+        guiNode.attachChild(background);
+        guiNode.attachChild(border);
+        guiNode.attachChild(foreground);
+        guiNode.attachChild(nameText);
+    }
+    
     protected void makeCharacterController()
     {
         results = new CollisionResults();
         player = new Node();
         sage.setNode(player);
         sage.getNode().setLocalTranslation(rootNode.getLocalTranslation());
+        sage.getNode().setName("PlayerNode");
         
         Spatial playerBox = assetManager.loadModel("Models/ShortBoy/ShortBoyUV2.j3o");
         playerBox.scale(.25f);
@@ -185,6 +234,26 @@ public class Sagacity extends SimpleApplication
         bulletAppState.getPhysicsSpace().addCollisionListener(sage);
         
         rootNode.attachChild(sage.getNode());
+    }
+    
+    private void makeEnemy()
+    {
+        Node enemyNode = new Node();
+        enemyNode.setName("EnemyNode");
+        Spatial enemyBox = assetManager.loadModel("Models/ShortBoy/ShortBoyUV2.j3o");
+        enemyBox.scale(.25f);
+        enemyBox.move(10f, 6f, 3f);
+        enemyBox.setName("Enemy");
+        Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        enemyBox.setMaterial(mat);
+        enemyNode.attachChild(enemyBox);
+        
+        RigidBodyControl enemyCollision = new RigidBodyControl(1.0f);
+        enemyBox.addControl(enemyCollision);
+        
+        bulletAppState.getPhysicsSpace().add(enemyCollision);
+        
+        rootNode.attachChild(enemyNode);
     }
     
     protected void updateHUD()
@@ -830,7 +899,6 @@ public class Sagacity extends SimpleApplication
         ambient = new AmbientLight();
         ambient.setColor(ColorRGBA.White.mult(1.3f));
         rootNode.addLight(ambient);
-
         roomLight = new PointLight();
         roomLight.setPosition(camera.getNode().getLocalTranslation());
         rootNode.addLight(roomLight);
@@ -1059,6 +1127,7 @@ public class Sagacity extends SimpleApplication
     
     private void initSounds()
     {
+        // Running sound does not play when you reset the game
         runningSound = new AudioNode(assetManager, "Sounds/WalkingSound.wav", true);
         runningSound.setPositional(false);
         runningSound.setLooping(false);
@@ -1108,10 +1177,11 @@ public class Sagacity extends SimpleApplication
         inputManager.addMapping("DecreaseHealth", new KeyTrigger(KeyInput.KEY_7));
         
         inputManager.addMapping("UsePotion", new KeyTrigger(KeyInput.KEY_M));
+        inputManager.addMapping("OpenMenu", new KeyTrigger(KeyInput.KEY_C));
 
         inputManager.addMapping("IgnoreCollision", new KeyTrigger(KeyInput.KEY_RCONTROL));
 
-        inputManager.addListener(actionListener, "Zoom", "CameraReset", "IgnoreCollision", "StartGame", "UsePotion", "PlayerLeft", "PlayerUp", "PlayerRight", "PlayerDown");
+        inputManager.addListener(actionListener, "Zoom", "CameraReset", "IgnoreCollision", "StartGame", "UsePotion", "PlayerLeft", "PlayerUp", "PlayerRight", "PlayerDown", "OpenMenu");
         inputManager.addListener(analogListener, "CameraLeft", "CameraUp", "CameraRight", "CameraDown", "PlayerLeft", "PlayerUp", "PlayerRight", "PlayerDown", "IncreaseSpeed", "DecreaseSpeed", "IncreaseHealth", "DecreaseHealth");
     }
     // Action listener is for actions that should only happen once in a given moment
@@ -1159,14 +1229,7 @@ public class Sagacity extends SimpleApplication
                 }
                 if (name.equals("PlayerLeft"))
                 {
-                    if(keyPressed)
-                    {
-                        sage.setMoveLeft(true);
-                    }
-                    else
-                    {
-                        sage.setMoveLeft(false);
-                    }
+                    sage.setMoveLeft(keyPressed);
                 }
                 if (name.equals("PlayerUp"))
                 {
@@ -1180,6 +1243,17 @@ public class Sagacity extends SimpleApplication
                 {
                     sage.setMoveDown(keyPressed);
                 }
+                if (name.equals("OpenMenu") && !keyPressed)
+                {
+                    if(!menuOpen)
+                    {
+                        menuOpen = true;
+                    }
+                    else
+                    {
+                        menuOpen = false;
+                    }
+                }
             }
             else if(gameOver) // yes, it is redundant - just for readability
             {
@@ -1188,6 +1262,7 @@ public class Sagacity extends SimpleApplication
                     resetGame();
                     // Enabling the title screen and disabling the game over screen
                     atTitleScreen = true;
+                    menuOpen = false;
                     gameOver = false;
                 }
             }
@@ -1351,6 +1426,10 @@ public class Sagacity extends SimpleApplication
          {
             updateHUD();
             updateCharacterStatus();
+            if(menuOpen)
+            {
+                 displayMenu();
+            }
          }
          if(gameOver)
          {

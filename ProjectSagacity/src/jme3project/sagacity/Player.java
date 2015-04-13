@@ -72,10 +72,64 @@ public class Player implements PhysicsCollisionListener {
     
     ignoreCollision = false; //for debugging purposes
   }
+  
+  public Player(int attack, int defense)
+  {
+    x = 0;
+    y = 2;
+    z = 0;  
+       
+    playerSpeed = .1f;
+    
+    playerHealth = 100;
+    
+    potionCount = 1;
+    
+    playerAttack = attack;
+    
+    playerDefense = defense;
+    
+    playerFacing = "up";
+    
+    allowLeft = true;
+    allowRight = true;
+    allowUp = true;
+    allowDown = true;
+    
+    moveLeft = false;
+    moveRight = false;
+    moveUp = false;
+    moveDown = false;
+    
+    ignoreCollision = false; //for debugging purposes
+  }
+  
   // Needs work
   public void collision(PhysicsCollisionEvent event) 
   {
+      //System.out.println(event.getNodeA().getName());
+      if(event.getNodeA() == null || event.getNodeB() == null)
+      {
+          return;
+      }
+      try
+      {
       // This is where collision events will go e.g. being damaged when touching an enemy
+      if(event.getNodeA().getName().equals("PlayerNode") && event.getNodeB().getName().equals("Enemy"))
+      {
+          //event.getNodeB().getParent().detachChildNamed("Enemy"); -- this can be used to do powerups
+          playerHealth--;
+      }
+      if(event.getNodeB().getName().equals("PlayerNode") && event.getNodeA().getName().equals("Enemy"))
+      {
+          //event.getNodeA().getParent().detachChildNamed("Enemy");
+          playerHealth--;
+      }
+      } 
+      catch(Exception e)
+      {
+          
+      }
   }
   
   public Ray getRay()
