@@ -21,10 +21,14 @@ public class Player implements PhysicsCollisionListener {
   
   private int playerAttack;
   private int playerDefense;
+  private int playerBliss;
+  private int playerStorytelling;
   
   private String playerFacing;
   
   private int potionCount;
+  private int powerUpCount;
+  private int defenseUpCount;
   
   private boolean allowLeft;
   private boolean allowRight;
@@ -35,6 +39,8 @@ public class Player implements PhysicsCollisionListener {
   private boolean moveRight;
   private boolean moveUp;
   private boolean moveDown;
+  
+  private boolean foundWisdom;
   
   private boolean ignoreCollision; // for debugging purposes
   
@@ -58,6 +64,10 @@ public class Player implements PhysicsCollisionListener {
     
     playerDefense = 1;
     
+    playerBliss = 0;
+    
+    playerStorytelling = 0;
+    
     playerFacing = "up";
     
     allowLeft = true;
@@ -70,10 +80,12 @@ public class Player implements PhysicsCollisionListener {
     moveUp = false;
     moveDown = false;
     
+    foundWisdom = false;
+    
     ignoreCollision = false; //for debugging purposes
   }
   
-  public Player(int attack, int defense)
+  public Player(int attack, int defense, int bliss, int storytelling)
   {
     x = 0;
     y = 2;
@@ -89,6 +101,13 @@ public class Player implements PhysicsCollisionListener {
     
     playerDefense = defense;
     
+    playerBliss = bliss;
+    
+    playerStorytelling = storytelling;
+    
+    powerUpCount = 0;
+    defenseUpCount = 0;
+    
     playerFacing = "up";
     
     allowLeft = true;
@@ -100,6 +119,8 @@ public class Player implements PhysicsCollisionListener {
     moveRight = false;
     moveUp = false;
     moveDown = false;
+    
+    foundWisdom = false;
     
     ignoreCollision = false; //for debugging purposes
   }
@@ -118,12 +139,58 @@ public class Player implements PhysicsCollisionListener {
       if(event.getNodeA().getName().equals("PlayerNode") && event.getNodeB().getName().equals("Enemy"))
       {
           //event.getNodeB().getParent().detachChildNamed("Enemy"); -- this can be used to do powerups
-          playerHealth--;
+          if(playerDefense < 5)
+          {
+              playerHealth -= 5 - playerDefense;
+          }
+          else
+          {
+              playerHealth--;
+          }
+          
       }
       if(event.getNodeB().getName().equals("PlayerNode") && event.getNodeA().getName().equals("Enemy"))
       {
-          //event.getNodeA().getParent().detachChildNamed("Enemy");
-          playerHealth--;
+          if(playerDefense < 5)
+          {
+              playerHealth -= 5 - playerDefense;
+          }
+          else
+          {
+              playerHealth--;
+          }
+      }
+      if(event.getNodeA().getName().equals("PlayerNode") && event.getNodeB().getName().equals("PowerUp"))
+      {
+          event.getNodeB().getParent().detachChildNamed("PowerUp"); 
+          powerUpCount++;
+      }
+      if(event.getNodeB().getName().equals("PlayerNode") && event.getNodeA().getName().equals("PowerUp"))
+      {
+          event.getNodeA().getParent().detachChildNamed("PowerUp");
+          powerUpCount++;
+      }
+      if(event.getNodeA().getName().equals("PlayerNode") && event.getNodeB().getName().equals("DefenseUp"))
+      {
+          event.getNodeB().getParent().detachChildNamed("DefenseUp"); 
+          defenseUpCount++;
+      }
+      if(event.getNodeB().getName().equals("PlayerNode") && event.getNodeA().getName().equals("DefenseUp"))
+      {
+          event.getNodeA().getParent().detachChildNamed("DefenseUp");
+          defenseUpCount++;
+      }
+      if(event.getNodeA().getName().equals("PlayerNode") && event.getNodeB().getName().equals("Wisdom"))
+      {
+          event.getNodeB().getParent().detachChildNamed("Wisdom"); 
+          playerStorytelling++;
+          foundWisdom = true;
+      }
+      if(event.getNodeB().getName().equals("PlayerNode") && event.getNodeA().getName().equals("Wisdom"))
+      {
+          event.getNodeA().getParent().detachChildNamed("Wisdom");
+          playerStorytelling++;
+          foundWisdom = true;
       }
       } 
       catch(Exception e)
@@ -215,6 +282,56 @@ public class Player implements PhysicsCollisionListener {
   public int getDefense()
   {
       return playerDefense;
+  }
+  
+  public void setBliss(int bliss)
+  {
+      playerBliss += bliss;
+  }
+  
+  public int getBliss()
+  {
+      return playerBliss;
+  }
+  
+  public void setStorytelling(int storytelling)
+  {
+      playerStorytelling += storytelling;
+  }
+  
+  public int getStorytelling()
+  {
+      return playerStorytelling;
+  }
+  
+  public void setFoundWisdom(boolean wisdom)
+  {
+      foundWisdom = wisdom;
+  }
+  
+  public boolean getFoundWisdom()
+  {
+      return foundWisdom;
+  }
+     
+  public void setNumPowerUp(int powerUp)
+  {
+      powerUpCount += powerUp;
+  }
+  
+  public int getNumPowerUp()
+  {
+      return powerUpCount;
+  }
+  
+  public void setNumDefenseUp(int defenseUp)
+  {
+      defenseUpCount += defenseUp;
+  }
+  
+  public int getNumDefenseUp()
+  {
+      return defenseUpCount;
   }
   
   public void setFacing(String facing)
