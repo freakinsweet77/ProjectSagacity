@@ -42,6 +42,8 @@ public class Player implements PhysicsCollisionListener {
   
   private boolean foundWisdom;
   
+  private boolean hitEnemy;
+  
   private boolean ignoreCollision; // for debugging purposes
   
   private Ray ray;
@@ -82,6 +84,8 @@ public class Player implements PhysicsCollisionListener {
     
     foundWisdom = false;
     
+    hitEnemy = false;
+    
     ignoreCollision = false; //for debugging purposes
   }
   
@@ -121,6 +125,8 @@ public class Player implements PhysicsCollisionListener {
     moveDown = false;
     
     foundWisdom = false;
+    
+    hitEnemy = false;
     
     ignoreCollision = false; //for debugging purposes
   }
@@ -191,6 +197,14 @@ public class Player implements PhysicsCollisionListener {
           event.getNodeA().getParent().detachChildNamed("Wisdom");
           playerStorytelling++;
           foundWisdom = true;
+      }
+      if(event.getNodeA().getName().equals("Attack") && event.getNodeB().getName().equals("Enemy"))
+      {
+          hitEnemy = true;
+      }
+      if(event.getNodeB().getName().equals("Attack") && event.getNodeA().getName().equals("Enemy"))
+      {
+          hitEnemy = true;
       }
       } 
       catch(Exception e)
@@ -332,6 +346,16 @@ public class Player implements PhysicsCollisionListener {
   public int getNumDefenseUp()
   {
       return defenseUpCount;
+  }
+  
+  public void setHitEnemy(boolean hit)
+  {
+      hitEnemy = hit;
+  }
+  
+  public boolean getHitEnemy()
+  {
+      return hitEnemy;
   }
   
   public void setFacing(String facing)
