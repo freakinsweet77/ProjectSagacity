@@ -1,3 +1,5 @@
+// This is the file from the github repo
+
 package jme3project.sagacity;
 
 import com.jme3.animation.AnimChannel;
@@ -88,6 +90,8 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
     private AudioNode endGameSound;
     private AudioNode useItemSound;
     private AudioNode windSound;
+    
+    private int tempEnemyHealth = 50;
 
     // -------------------------- //
     public static void main(String[] args)
@@ -115,14 +119,11 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         if(firstWisdomUnlock)
         {
             makeEnemy(rootNode);
-            makeEnemy(rootNode);
-            makeEnemy(rootNode);
         }
         else
         {
             makeWisdom();
         }
-        
         makePowerUp();
         makeDefenseUp();
         
@@ -142,6 +143,7 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         sage = new Player(sage.getAttack(), sage.getDefense(), sage.getBliss(), sage.getStorytelling());
         camera = new Camera(rootNode);
         gaveMerchant = false;
+        tempEnemyHealth = 50;
         initSounds();
     }
     
@@ -492,6 +494,24 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         bulletAppState.getPhysicsSpace().add(wisdomCollision);
         
         rootNode.attachChild(wisdomNode);
+    }
+    
+    protected void playerAttack()
+    {
+        Node attackNode = new Node();
+        attackNode.setName("attackNode");
+        Spatial attackBox = assetManager.loadModel("Models/Rock1/Rock1.j3o");
+        attackBox.setLocalTranslation(sage.getNode().getLocalTranslation().x + (float)getNumRooms(-16, 16), 70f, sage.getNode().getLocalTranslation().z + (float)getNumRooms(-16, 16));
+        attackBox.setName("Attack");
+        attackBox.setMaterial((Material) assetManager.loadMaterial("Materials/Rock_1.j3m"));
+        attackNode.attachChild(attackBox);
+        
+        RigidBodyControl attackCollision = new RigidBodyControl(1.0f);
+        attackBox.addControl(attackCollision);
+        
+        bulletAppState.getPhysicsSpace().add(attackCollision);
+        
+        sage.getNode().attachChild(attackNode);
     }
     
     protected void updateHUD()
@@ -1030,7 +1050,7 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
                 {
                     xLocation = getRoomItemXLocation(row);
                     zLocation = getRoomItemZLocation(col);
-                    makeEnvironmentItem(rootNode, xLocation, zLocation, "Rock1/Rock1.j3o", "RockTexture.jpg");
+                    makeEnvironmentItem(rootNode, xLocation, zLocation, "Rock2/Rock2.j3o", "RockTexture.jpg");
                 }
             }
         }
@@ -1045,7 +1065,7 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
                     {
                         xLocation = getRoomItemXLocation(row);
                         zLocation = getRoomItemZLocation(col);
-                        makeEnvironmentItem(room, xLocation, zLocation, "Rock1/Rock1.j3o", "RockTexture.jpg");
+                        makeEnvironmentItem(room, xLocation, zLocation, "Rock2/Rock2.j3o", "RockTexture.jpg");
                     }
                 }
             }
@@ -1459,9 +1479,11 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         inputManager.addMapping("OpenMenu", new KeyTrigger(KeyInput.KEY_C));
         inputManager.addMapping("OpenMerchant", new KeyTrigger(KeyInput.KEY_L));
 
-        inputManager.addMapping("IgnoreCollision", new KeyTrigger(KeyInput.KEY_RCONTROL));
+        inputManager.addMapping("PlayerAttack", new KeyTrigger(KeyInput.KEY_RCONTROL));
+        
+        inputManager.addMapping("IgnoreCollision", new KeyTrigger(KeyInput.KEY_LCONTROL));
 
-        inputManager.addListener(actionListener, "Zoom", "CameraReset", "IgnoreCollision", "StartGame", "UsePotion", "PlayerLeft", "PlayerUp", "PlayerRight", "PlayerDown", "OpenMenu", "UsePowerUp", "UseDefenseUp", "OpenMerchant");
+        inputManager.addListener(actionListener, "Zoom", "CameraReset", "IgnoreCollision", "StartGame", "UsePotion", "PlayerLeft", "PlayerUp", "PlayerRight", "PlayerDown", "OpenMenu", "UsePowerUp", "UseDefenseUp", "OpenMerchant", "PlayerAttack");
         inputManager.addListener(analogListener, "CameraLeft", "CameraUp", "CameraRight", "CameraDown", "PlayerLeft", "PlayerUp", "PlayerRight", "PlayerDown", "IncreaseSpeed", "DecreaseSpeed", "IncreaseHealth", "DecreaseHealth");
     }
     // Action listener is for actions that should only happen once in a given moment
@@ -1657,6 +1679,10 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
                         }
                     }
                 }
+                if(name.equals("PlayerAttack") && !keyPressed)
+                {
+                    playerAttack();
+                }
             }
             else if(gameOver) // yes, it is redundant - just for readability
             {
@@ -1838,6 +1864,15 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
          {
             updateHUD();
             updateCharacterStatus();
+            if(sage.getHitEnemy())
+            {
+                tempEnemyHealth--;
+                sage.setHitEnemy(false);
+            }
+            if(tempEnemyHealth <= 0)
+            {
+                rootNode.detachChildNamed("EnemyNode");
+            }
             if(wisdomOpen)
             {
                 displayWisdom();
