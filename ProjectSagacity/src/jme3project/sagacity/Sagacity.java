@@ -216,7 +216,7 @@ public class Sagacity extends SimpleApplication
         sage.getNode().setLocalTranslation(rootNode.getLocalTranslation());
         sage.getNode().setName("PlayerNode");
         
-        Spatial playerBox = assetManager.loadModel("Models/ShortBoy/ShortBoyUV2.j3o");
+        Spatial playerBox = assetManager.loadModel("Models/ShortBoyUV2/ShortBoyUV2.j3o");
         playerBox.scale(.25f);
         playerBox.move(0f, 6f, 0f);
         playerBox.setName("Player");
