@@ -75,7 +75,8 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
     private boolean metMerchant = false;
     private boolean gaveMerchant = false;
     private boolean wisdomOpen = false;
-    private boolean firstWisdomUnlock = false;
+    private int wisdomNumber = -1;
+    private boolean[] wisdomUnlock = {false, false, false, false};
     private Player sage = new Player();
     private Camera camera = new Camera(rootNode);
     
@@ -116,13 +117,21 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         //bulletAppState.setDebugEnabled(true);
         makeFloor();
         makeCharacterController();
-        if(firstWisdomUnlock)
+        if(wisdomUnlock[0])
         {
             makeEnemy(rootNode);
+            for(Node room : rooms)
+            {
+                makeEnemy(room);
+            }
         }
-        else
+        for(boolean wisdom : wisdomUnlock)
         {
-            makeWisdom();
+            if(wisdom == false)
+            {
+                makeWisdom();
+                break;
+            }
         }
         makePowerUp();
         makeDefenseUp();
@@ -359,11 +368,44 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         guiFont = assetManager.loadFont("Interface/Fonts/Default.fnt");
         BitmapText wisdomText = new BitmapText(guiFont, false);
         wisdomText.setSize(24);
-        wisdomText.setText("The CoDE\n"
+        if(wisdomNumber == 0 && wisdomUnlock[wisdomNumber] == false)
+        {
+            //wisdomUnlock[wisdomNumber] = true;
+            wisdomText.setText("The CoDE\n"
                             + "Mary,\n"
                             + "Mary,\n"
                             + "Paul.\n\n"
                             + "MMP\n");
+        }
+        if(wisdomNumber == 1 && wisdomUnlock[wisdomNumber] == false)
+        {
+            //wisdomUnlock[wisdomNumber] = true;
+            wisdomText.setText("How many times must you be told?\n"
+                            + "...\n"
+                            + "I said drain it completely, every time.\n"
+                            + "...\n\n"
+                            + "You have nothing to say for yourself, as usual.\n");
+        }
+        if(wisdomNumber == 2 && wisdomUnlock[wisdomNumber] == false)
+        {
+            //wisdomUnlock[wisdomNumber] = true;
+            wisdomText.setText("Quickly, this way!\n"
+                            + "Have you got the amulet?\n"
+                            + "O-of course I do!\n"
+                            + "Good, all may not be lost.\n"
+                            + "When you get to the end, take the left door, do you understand?\n\n"
+                            + "The left, not the right.\n\n");
+        }
+        if(wisdomNumber == 3 && wisdomUnlock[wisdomNumber] == false)
+        {
+            //wisdomUnlock[wisdomNumber] = true;
+            wisdomText.setText("You know, things weren't always this way.\n"
+                            + "Really?\n"
+                            + "Really.\n"
+                            + "She used to fancy me quite a bit actually.\n"
+                            + "What happened?\n\n"
+                            + "Ah, that is a story for another time, come along.\n\n");
+        }
         wisdomText.setLocalTranslation(getScreenWidth() * (0.62f/3.0f), getScreenHeight() * (2.36f/3.0f), 0);
         
         guiNode.attachChild(background);
@@ -407,6 +449,7 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         bulletAppState.getPhysicsSpace().addCollisionListener(sage); 
     }
     
+    // randomization needs work
     protected void makeEnemy(Node room)
     {
         Node enemyNode = new Node();
@@ -414,7 +457,7 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         Sphere enemySphere = new Sphere(32,32,2f);
         Spatial enemyBox = new Geometry("Enemy", enemySphere);
         //Spatial enemyBox = assetManager.loadModel("Models/ShortBoy/ShortBoyUV2.j3o");
-        enemyBox.setLocalTranslation((float)getNumRooms(-16, 16), 6f, (float)getNumRooms(-16, 16));
+        enemyBox.setLocalTranslation(room.getLocalTranslation().x + (float)getNumRooms(-16, 16), room.getLocalTranslation().y + 6f, room.getLocalTranslation().z + (float)getNumRooms(-16, 16));
         enemyBox.setName("Enemy");
         Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         mat.setColor("Color", new ColorRGBA(.5f,.5f,.5f,.5f));
@@ -476,6 +519,11 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
     
     protected void makeWisdom()
     {
+        if(wisdomNumber < 0)
+        {
+             wisdomNumber = getWisdomRandom(4);
+        }
+        
         Node wisdomNode = new Node();
         Box box = new Box(1f,1f,1f);
         wisdomNode.setName("WisdomNode");
@@ -500,13 +548,13 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
     {
         Node attackNode = new Node();
         attackNode.setName("attackNode");
-        Spatial attackBox = assetManager.loadModel("Models/Rock1/Rock1.j3o");
+        Spatial attackBox = assetManager.loadModel("Models/RockSpike/RockSpike.j3o");
         attackBox.setLocalTranslation(sage.getNode().getLocalTranslation().x + (float)getNumRooms(-16, 16), 70f, sage.getNode().getLocalTranslation().z + (float)getNumRooms(-16, 16));
         attackBox.setName("Attack");
         attackBox.setMaterial((Material) assetManager.loadMaterial("Materials/Rock_1.j3m"));
         attackNode.attachChild(attackBox);
         
-        RigidBodyControl attackCollision = new RigidBodyControl(1.0f);
+        RigidBodyControl attackCollision = new RigidBodyControl(3.0f);
         attackBox.addControl(attackCollision);
         
         bulletAppState.getPhysicsSpace().add(attackCollision);
@@ -1214,6 +1262,18 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         return randomGenerator.nextInt(max);
     }
 
+    protected int getWisdomRandom(int max)
+    {
+        int wisdom = randomGenerator.nextInt(max);
+        
+        if(wisdomUnlock[wisdom])
+        {
+            getWisdomRandom(max);
+        }
+        
+        return wisdom;
+    }
+    
     // Returns a random number between two values
     protected int getNumRooms(int min, int max)
     {
@@ -1647,7 +1707,9 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
                     {
                         sage.setFoundWisdom(false);
                         wisdomOpen = false;
-                        firstWisdomUnlock = true;
+                        wisdomUnlock[wisdomNumber] = true;
+                        wisdomNumber = -1;
+                        
                     }
                     if(sage.getFoundWisdom())
                     {
