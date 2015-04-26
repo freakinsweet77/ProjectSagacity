@@ -58,6 +58,8 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
     private int roomGridHeight = 10;
     private int wallCollisionIndex = 0;
     private int environmentCollisionIndex = 0;
+    private int enemyCollisionIndex = 0;
+    private int enemyMovementIndex = 0;
     private int textIndex = 0;
     private float blockWidth = 5;
     private float blockHeight = 5;
@@ -65,6 +67,7 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
     private RigidBodyControl wallCollision[];
     private RigidBodyControl floorCollision[];
     private RigidBodyControl environmentCollision[];
+    private RigidBodyControl enemyCollision[];
     private RigidBodyControl playerCollision;
     private BetterCharacterControl playerControl;
     private Quaternion rotation = new Quaternion();
@@ -117,14 +120,6 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         //bulletAppState.setDebugEnabled(true);
         makeFloor();
         makeCharacterController();
-        if(wisdomUnlock[0])
-        {
-            makeEnemy(rootNode);
-            for(Node room : rooms)
-            {
-                makeEnemy(room);
-            }
-        }
         for(boolean wisdom : wisdomUnlock)
         {
             if(wisdom == false)
@@ -137,6 +132,7 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         makeDefenseUp();
         
         makeEnvironment();
+        makeEnemies();
         setupCamera(rootNode, 0, 750, 35);
         camera.setY(65);
         camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
@@ -449,14 +445,14 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         bulletAppState.getPhysicsSpace().addCollisionListener(sage); 
     }
     
-    // randomization needs work
+    // Unused method - still here as a reference if needed
     protected void makeEnemy(Node room)
     {
         Node enemyNode = new Node();
         enemyNode.setName("EnemyNode");
         Sphere enemySphere = new Sphere(32,32,2f);
-        Spatial enemyBox = new Geometry("Enemy", enemySphere);
-        //Spatial enemyBox = assetManager.loadModel("Models/ShortBoy/ShortBoyUV2.j3o");
+        //Spatial enemyBox = new Geometry("Enemy", enemySphere);
+       Spatial enemyBox = assetManager.loadModel("Models/EnemyJointless/EnemyJointless.j3o");
         enemyBox.setLocalTranslation(room.getLocalTranslation().x + (float)getNumRooms(-16, 16), room.getLocalTranslation().y + 6f, room.getLocalTranslation().z + (float)getNumRooms(-16, 16));
         enemyBox.setName("Enemy");
         Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
@@ -471,6 +467,63 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         bulletAppState.getPhysicsSpace().add(enemyCollision);
         
         room.attachChild(enemyNode);
+    }
+    
+    // Make enemy that is actually used
+    protected void makeEnemy(Node room, double xLocation, double zLocation, String model, String texture)
+    {
+        Spatial enemy = assetManager.loadModel("Models/" + model);
+        
+        room.attachChild(enemy);
+        
+        enemy.setName("Enemy");
+        enemy.setUserData("health", 500);
+        enemy.setLocalTranslation((float) xLocation, 2f, (float) zLocation);
+        Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        //mat.setColor("Color", ColorRGBA.Brown);
+        
+        enemy.setMaterial((Material) assetManager.loadMaterial("Materials/Rock_1.j3m"));
+        
+        enemyCollision[enemyCollisionIndex] = new RigidBodyControl(0.0f);
+        enemy.addControl(enemyCollision[enemyCollisionIndex]);
+        enemy.getControl(RigidBodyControl.class).setKinematic(false);
+        bulletAppState.getPhysicsSpace().add(enemyCollision[enemyCollisionIndex]);
+      
+        enemyCollisionIndex++;
+    }
+    
+    // Called once to make all of the enemies for the entire floor
+    protected void makeEnemies()
+    {
+        double xLocation;
+        double zLocation;
+        
+        for (Node room : rooms)
+        {
+            for (int row = 2; row <= roomGridWidth; row++)
+            {
+                for (int col = 2; col <= roomGridHeight; col++)
+                {
+                    if (room.getUserData("EnvironmentObject " + row + "-" + col))
+                    {
+                        // do nothing b/c environment exists there
+                    }
+                    else
+                    {
+                        if(getRandom(20) == 0) // 5% chance to make an enemy in each location
+                        {
+                            xLocation = getRoomItemXLocation(row);
+                            zLocation = getRoomItemZLocation(col);
+                            makeEnemy(room, xLocation, zLocation, "EnemyJointless/EnemyJointless.j3o", "RockTexture.jpg");
+                        }
+                        else
+                        {
+                            continue;
+                        }
+                    }
+                }
+            }
+        }
     }
     
     protected void makePowerUp()
@@ -554,7 +607,7 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         attackBox.setMaterial((Material) assetManager.loadMaterial("Materials/Rock_1.j3m"));
         attackNode.attachChild(attackBox);
         
-        RigidBodyControl attackCollision = new RigidBodyControl(3.0f);
+        RigidBodyControl attackCollision = new RigidBodyControl(8.0f);
         attackBox.addControl(attackCollision);
         
         bulletAppState.getPhysicsSpace().add(attackCollision);
@@ -674,6 +727,12 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
             playerControl.setWalkDirection(walkingDirection);
         }
     }
+    
+    protected void updateEnemyStatus()
+    {
+        
+    }
+    
     // UNUSED METHOD
     protected void makePlayer()
     {
@@ -715,6 +774,7 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         wallCollision = new RigidBodyControl[numRooms * 2400];
         floorCollision = new RigidBodyControl[numRooms];
         environmentCollision = new RigidBodyControl[numRooms * 2400];
+        enemyCollision = new RigidBodyControl[numRooms * 2400];
 
         initRooms();
         initNeighborData();
@@ -1926,14 +1986,10 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
          {
             updateHUD();
             updateCharacterStatus();
+            updateEnemyStatus();
             if(sage.getHitEnemy())
             {
-                tempEnemyHealth--;
                 sage.setHitEnemy(false);
-            }
-            if(tempEnemyHealth <= 0)
-            {
-                rootNode.detachChildNamed("EnemyNode");
             }
             if(wisdomOpen)
             {

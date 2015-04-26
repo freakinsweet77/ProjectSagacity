@@ -2,9 +2,9 @@ package jme3project.sagacity;
 
 import com.jme3.math.Ray;
 import com.jme3.scene.Node;
-import com.jme3.bullet.PhysicsSpace;
 import com.jme3.bullet.collision.PhysicsCollisionEvent;
 import com.jme3.bullet.collision.PhysicsCollisionListener;
+import com.jme3.math.Vector3f;
 
 /**
  * @author Kenton Goodling & Thomas Hippenstiel
@@ -200,11 +200,29 @@ public class Player implements PhysicsCollisionListener {
       }
       if(event.getNodeA().getName().equals("Attack") && event.getNodeB().getName().equals("Enemy"))
       {
-          hitEnemy = true;
+          //hitEnemy = true;
+          int enemyHealth = event.getNodeB().getUserData("health");
+          if(enemyHealth > 0)
+          {
+              event.getNodeB().setUserData("health", enemyHealth - 5);
+          }
+          else
+          {
+              event.getNodeB().setLocalTranslation(new Vector3f(0f, -1000f, 0f));
+          }
       }
       if(event.getNodeB().getName().equals("Attack") && event.getNodeA().getName().equals("Enemy"))
       {
-          hitEnemy = true;
+          //hitEnemy = true;
+          int enemyHealth = event.getNodeA().getUserData("health");
+          if(enemyHealth > 0)
+          {
+              event.getNodeA().setUserData("health", enemyHealth - 5);
+          }
+          else
+          {
+              event.getNodeA().setLocalTranslation(new Vector3f(0f, -1000f, 0f));
+          }
       }
       } 
       catch(Exception e)
