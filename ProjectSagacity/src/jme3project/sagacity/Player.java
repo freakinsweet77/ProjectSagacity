@@ -201,6 +201,7 @@ public class Player implements PhysicsCollisionListener {
       {
           //hitEnemy = true;
           int enemyHealth = event.getNodeB().getUserData("health");
+          boolean isEnergy = event.getNodeA().getUserData("energy");
           if(enemyHealth > 0)
           {
               event.getNodeB().setUserData("health", enemyHealth - 5);
@@ -212,14 +213,20 @@ public class Player implements PhysicsCollisionListener {
               
               //event.getNodeB().setLocalTranslation(new Vector3f(0f, -1000f, 0f));
           }
+          if(isEnergy)
+          {
+              event.getNodeA().removeFromParent();
+              event.getNodeA().removeControl(event.getNodeA().getControl(0));
+          }
       }
       if(event.getNodeB().getName().equals("Attack") && event.getNodeA().getName().equals("Enemy"))
       {
           //hitEnemy = true;
           int enemyHealth = event.getNodeA().getUserData("health");
+          boolean isEnergy = event.getNodeB().getUserData("energy");
           if(enemyHealth > 0)
           {
-              event.getNodeA().setUserData("health", enemyHealth - 5);
+              event.getNodeA().setUserData("health", enemyHealth - 40);
           }
           else
           {
@@ -227,6 +234,11 @@ public class Player implements PhysicsCollisionListener {
               event.getNodeA().removeControl(event.getNodeA().getControl(0));
              
               //event.getNodeA().setLocalTranslation(new Vector3f(0f, -1000f, 0f));
+          }
+          if(isEnergy)
+          {
+              event.getNodeB().removeFromParent();
+              event.getNodeB().removeControl(event.getNodeB().getControl(0));
           }
       }
       } 
