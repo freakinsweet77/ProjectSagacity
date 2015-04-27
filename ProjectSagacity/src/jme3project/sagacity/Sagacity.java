@@ -36,6 +36,8 @@ import com.jme3.scene.shape.Sphere;
 import com.jme3.texture.Texture;
 import com.jme3.util.TangentBinormalGenerator;
 import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Sagacity extends SimpleApplication implements AnimEventListener
 {
@@ -79,6 +81,7 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
     private boolean gaveMerchant = false;
     private boolean wisdomOpen = false;
     private int wisdomNumber = -1;
+    private int shottimer = 0;
     private boolean[] wisdomUnlock =
     {
         false, false, false, false
@@ -465,61 +468,99 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
     }
 
     // Unused method - still here as a reference if needed
-    protected void makeEnemy(Node room)
+    protected void makeEnemy(Node room, double xLocation, double zLocation)
     {
-        Node enemyNode = new Node();
-        enemyNode.setName("EnemyNode");
-        Sphere enemySphere = new Sphere(32, 32, 2f);
-        //Spatial enemyBox = new Geometry("Enemy", enemySphere);
-        Spatial enemyBox = assetManager.loadModel("Models/EnemyJointless/EnemyJointless.j3o");
-        enemyBox.setLocalTranslation(room.getLocalTranslation().x + (float) getNumRooms(-16, 16), room.getLocalTranslation().y + 6f, room.getLocalTranslation().z + (float) getNumRooms(-16, 16));
-        enemyBox.setName("Enemy");
-        Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-        mat.setColor("Color", new ColorRGBA(.5f, .5f, .5f, .5f));
-        mat.getAdditionalRenderState().setBlendMode(BlendMode.Alpha);
-        enemyBox.setMaterial(mat);
-        enemyNode.attachChild(enemyBox);
+        /*Node enemyNode = new Node();
+         enemyNode.setName("EnemyNode");
+         Sphere enemySphere = new Sphere(32, 32, 2f);
+         //Spatial enemyBox = new Geometry("Enemy", enemySphere);
+         Spatial enemyBox = assetManager.loadModel("Models/EnemyJointless/EnemyJointless.j3o");
+         enemyBox.setLocalTranslation(room.getLocalTranslation().x + (float) getNumRooms(-16, 16), room.getLocalTranslation().y + 6f, room.getLocalTranslation().z + (float) getNumRooms(-16, 16));
+         enemyBox.setName("Enemy");
+         Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+         mat.setColor("Color", new ColorRGBA(.5f, .5f, .5f, .5f));
+         mat.getAdditionalRenderState().setBlendMode(BlendMode.Alpha);
+         enemyBox.setMaterial(mat);
+         enemyNode.attachChild(enemyBox);
 
-        RigidBodyControl enemyCollision = new RigidBodyControl(1.0f);
-        enemyBox.addControl(enemyCollision);
+         RigidBodyControl enemyCollision = new RigidBodyControl(1.0f);
+         enemyBox.addControl(enemyCollision);
 
-        bulletAppState.getPhysicsSpace().add(enemyCollision);
+         bulletAppState.getPhysicsSpace().add(enemyCollision);
 
-        room.attachChild(enemyNode);
+         room.attachChild(enemyNode);*/
+        Spatial enemy = assetManager.loadModel("Models/EnemyJointless/EnemyJointless.j3o");
+
+        room.attachChild(enemy);
+
+        enemy.setName("Bullet");
+        enemy.setUserData("health", 1);
+
+        enemy.setLocalTranslation((float) xLocation, 4f, (float) zLocation);
+
+        enemy.setMaterial((Material) assetManager.loadMaterial("Materials/Rock_1.j3m"));
+
+        enemyCollision[enemyCollisionIndex] = new BetterCharacterControl(0.5f, 6f, .00001f);
+
+        enemy.addControl(enemyCollision[enemyCollisionIndex]);
+        bulletAppState.getPhysicsSpace().add(enemyCollision[enemyCollisionIndex]);
+
+        enemyCollision[enemyCollisionIndex].setWalkDirection(enemyCollision[bossCollisionIndex].getViewDirection());
+
+        enemyCollisionIndex++;
+
     }
 
     // Make enemy that is actually used
     protected void makeEnemy(Node room, double xLocation, double zLocation, String model, String texture)
     {
-        Spatial enemy = assetManager.loadModel("Models/" + model);
-
-        room.attachChild(enemy);
-
-        enemy.setName("Enemy");
-        enemy.setUserData("health", 500);
-
-        enemy.setLocalTranslation((float) xLocation, 2f, (float) zLocation);
-        Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-        //mat.setColor("Color", ColorRGBA.Brown);
-
-        enemy.setMaterial((Material) assetManager.loadMaterial("Materials/Rock_1.j3m"));
-
-        if (bosstest)
+        if (!bosstest)
         {
+            Spatial enemy = assetManager.loadModel("Models/" + model);
+
+            room.attachChild(enemy);
+
+            enemy.setName("Enemy");
+            enemy.setUserData("health", 500);
+
+
+            enemy.setLocalTranslation((float) xLocation, 2f, (float) zLocation);
+            Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+            //mat.setColor("Color", ColorRGBA.Brown);
+
+            enemy.setMaterial((Material) assetManager.loadMaterial("Materials/Rock_1.j3m"));
+
+            enemyCollision[enemyCollisionIndex] = new BetterCharacterControl(0.5f, 6f, 1000f);
+            
+            enemy.addControl(enemyCollision[enemyCollisionIndex]);
+            bulletAppState.getPhysicsSpace().add(enemyCollision[enemyCollisionIndex]);
+
+        } else
+        {
+            Spatial boss = assetManager.loadModel("Models/" + model);
+
+            room.attachChild(boss);
+
+            boss.setName("Boss");
+            boss.setUserData("health", 5000);
+
+
+            boss.setLocalTranslation((float) xLocation, 2f, (float) zLocation);
+            Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+            //mat.setColor("Color", ColorRGBA.Brown);
+
+            boss.setMaterial((Material) assetManager.loadMaterial("Materials/Rock_1.j3m"));
+
             mat.setColor("Color", ColorRGBA.Brown);
-            enemy.setMaterial(mat);
-            enemy.scale(4);
+            boss.setMaterial(mat);
+            boss.scale(4);
             enemyCollision[enemyCollisionIndex] = new BetterCharacterControl(2, 24, 4000);
             bossCollisionIndex = enemyCollisionIndex;
             enemyCollision[bossCollisionIndex].setViewDirection(sage.getNode().getLocalTranslation());
-        } else
-        {
-            enemyCollision[enemyCollisionIndex] = new BetterCharacterControl(0.5f, 6f, 1000f);
+
+            boss.addControl(enemyCollision[enemyCollisionIndex]);
+            bulletAppState.getPhysicsSpace().add(enemyCollision[enemyCollisionIndex]);
         }
-        enemy.addControl(enemyCollision[enemyCollisionIndex]);
-        bulletAppState.getPhysicsSpace().add(enemyCollision[enemyCollisionIndex]);
-
-
         enemyCollisionIndex++;
     }
 
@@ -2092,5 +2133,29 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         {
             displayTitleScreen();
         }
+
+        if (bosstest && !gameOver && !atTitleScreen)
+        {
+            bossAttack();
+        }
+
+    }
+
+    private void bossAttack()
+    {
+        if (shottimer == 500)
+        {
+            int bossHealth = rootNode.getChild("Boss").getUserData("health");
+            if (bossHealth > 0)
+            {
+                makeEnemy(rootNode, 0, 0);
+                shottimer = 0;
+            } else
+            {
+                rootNode.getChild("Boss").removeControl(rootNode.getChild("Boss").getControl(0));
+                rootNode.getChild("Boss").removeFromParent();
+            }
+        }
+        shottimer++;
     }
 }
