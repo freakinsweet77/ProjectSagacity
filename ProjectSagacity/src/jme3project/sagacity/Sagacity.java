@@ -67,7 +67,7 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
     private RigidBodyControl wallCollision[];
     private RigidBodyControl floorCollision[];
     private RigidBodyControl environmentCollision[];
-    private RigidBodyControl enemyCollision[];
+    private BetterCharacterControl enemyCollision[];
     private RigidBodyControl playerCollision;
     private BetterCharacterControl playerControl;
     private Quaternion rotation = new Quaternion();
@@ -87,6 +87,7 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
     private AnimControl animationControl;
     
     private Vector3f walkingDirection = new Vector3f(0,0,0);
+    private Vector3f puppetWalkingDirection = new Vector3f(0,0,0);
     
     private AudioNode runningSound;
     private AudioNode healingSound;
@@ -452,7 +453,7 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         enemyNode.setName("EnemyNode");
         Sphere enemySphere = new Sphere(32,32,2f);
         //Spatial enemyBox = new Geometry("Enemy", enemySphere);
-       Spatial enemyBox = assetManager.loadModel("Models/EnemyJointless/EnemyJointless.j3o");
+        Spatial enemyBox = assetManager.loadModel("Models/EnemyJointless/EnemyJointless.j3o");
         enemyBox.setLocalTranslation(room.getLocalTranslation().x + (float)getNumRooms(-16, 16), room.getLocalTranslation().y + 6f, room.getLocalTranslation().z + (float)getNumRooms(-16, 16));
         enemyBox.setName("Enemy");
         Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
@@ -484,9 +485,8 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         
         enemy.setMaterial((Material) assetManager.loadMaterial("Materials/Rock_1.j3m"));
         
-        enemyCollision[enemyCollisionIndex] = new RigidBodyControl(0.0f);
+        enemyCollision[enemyCollisionIndex] = new BetterCharacterControl(0.5f, 6f, 1000f);
         enemy.addControl(enemyCollision[enemyCollisionIndex]);
-        enemy.getControl(RigidBodyControl.class).setKinematic(false);
         bulletAppState.getPhysicsSpace().add(enemyCollision[enemyCollisionIndex]);
       
         enemyCollisionIndex++;
@@ -708,21 +708,26 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         if(!gameOver && !atTitleScreen)
         {
             walkingDirection.set(0,0,0);
+            puppetWalkingDirection.set(0,0,0);
             if(sage.getMoveLeft())
             {
                 walkingDirection.addLocal(-sage.getSpeed() * 7,0,0);
+                puppetWalkingDirection.addLocal(sage.getSpeed() * 7,0,0);
             }
             if(sage.getMoveUp())
             {
                 walkingDirection.addLocal(0,0,-sage.getSpeed() * 7);
+                puppetWalkingDirection.addLocal(0,0,sage.getSpeed() * 7);
             }
             if(sage.getMoveRight())
             {
                 walkingDirection.addLocal(sage.getSpeed() * 7,0,0);
+                puppetWalkingDirection.addLocal(-sage.getSpeed() * 7,0,0);
             }
             if(sage.getMoveDown())
             {
                 walkingDirection.addLocal(0,0,sage.getSpeed() * 7);
+                puppetWalkingDirection.addLocal(0,0,-sage.getSpeed() * 7);
             }
             playerControl.setWalkDirection(walkingDirection);
         }
@@ -730,7 +735,18 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
     
     protected void updateEnemyStatus()
     {
-        
+        if(!gameOver && !atTitleScreen)
+        {
+            for(int i = 0; i < enemyCollision.length; i++)
+            {
+                if(enemyCollision[i] == null)
+                {
+                    break;
+                }
+                enemyCollision[i].setWalkDirection(puppetWalkingDirection);
+                enemyCollision[i].setViewDirection(new Vector3f(rotation.getX(), rotation.getY(), rotation.getZ()));
+            }
+        }
     }
     
     // UNUSED METHOD
@@ -774,7 +790,7 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         wallCollision = new RigidBodyControl[numRooms * 2400];
         floorCollision = new RigidBodyControl[numRooms];
         environmentCollision = new RigidBodyControl[numRooms * 2400];
-        enemyCollision = new RigidBodyControl[numRooms * 2400];
+        enemyCollision = new BetterCharacterControl[numRooms * 1200];
 
         initRooms();
         initNeighborData();

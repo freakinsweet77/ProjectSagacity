@@ -4,7 +4,6 @@ import com.jme3.math.Ray;
 import com.jme3.scene.Node;
 import com.jme3.bullet.collision.PhysicsCollisionEvent;
 import com.jme3.bullet.collision.PhysicsCollisionListener;
-import com.jme3.math.Vector3f;
 
 /**
  * @author Kenton Goodling & Thomas Hippenstiel
@@ -208,7 +207,10 @@ public class Player implements PhysicsCollisionListener {
           }
           else
           {
-              event.getNodeB().setLocalTranslation(new Vector3f(0f, -1000f, 0f));
+              event.getNodeB().removeFromParent();
+              event.getNodeB().removeControl(event.getNodeB().getControl(0));
+              
+              //event.getNodeB().setLocalTranslation(new Vector3f(0f, -1000f, 0f));
           }
       }
       if(event.getNodeB().getName().equals("Attack") && event.getNodeA().getName().equals("Enemy"))
@@ -221,7 +223,10 @@ public class Player implements PhysicsCollisionListener {
           }
           else
           {
-              event.getNodeA().setLocalTranslation(new Vector3f(0f, -1000f, 0f));
+              event.getNodeA().removeFromParent();
+              event.getNodeA().removeControl(event.getNodeA().getControl(0));
+             
+              //event.getNodeA().setLocalTranslation(new Vector3f(0f, -1000f, 0f));
           }
       }
       } 
