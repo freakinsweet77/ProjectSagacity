@@ -1,5 +1,4 @@
 // This is the file from the github repo
-
 package jme3project.sagacity;
 
 import com.jme3.animation.AnimChannel;
@@ -68,6 +67,7 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
     private RigidBodyControl floorCollision[];
     private RigidBodyControl environmentCollision[];
     private BetterCharacterControl enemyCollision[];
+    private int bossCollisionIndex;
     private RigidBodyControl playerCollision;
     private BetterCharacterControl playerControl;
     private Quaternion rotation = new Quaternion();
@@ -79,23 +79,23 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
     private boolean gaveMerchant = false;
     private boolean wisdomOpen = false;
     private int wisdomNumber = -1;
-    private boolean[] wisdomUnlock = {false, false, false, false};
+    private boolean[] wisdomUnlock =
+    {
+        false, false, false, false
+    };
     private Player sage = new Player();
     private Camera camera = new Camera(rootNode);
-    
     private AnimChannel animationChannel;
     private AnimControl animationControl;
-    
-    private Vector3f walkingDirection = new Vector3f(0,0,0);
-    private Vector3f puppetWalkingDirection = new Vector3f(0,0,0);
-    
+    private Vector3f walkingDirection = new Vector3f(0, 0, 0);
+    private Vector3f puppetWalkingDirection = new Vector3f(0, 0, 0);
     private AudioNode runningSound;
     private AudioNode healingSound;
     private AudioNode startGameSound;
     private AudioNode endGameSound;
     private AudioNode useItemSound;
     private AudioNode windSound;
-    
+    private boolean bosstest = true;
     private int tempEnemyHealth = 50;
 
     // -------------------------- //
@@ -114,32 +114,52 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         initSounds();
         displayTitleScreen();
     }
-    
+
     protected void startGame()
+    {
+        if (bosstest == false)
+        {
+            stateManager.attach(bulletAppState);
+            //bulletAppState.setDebugEnabled(true);
+            makeFloor();
+            makeCharacterController();
+            for (boolean wisdom : wisdomUnlock)
+            {
+                if (wisdom == false)
+                {
+                    makeWisdom();
+                    break;
+                }
+            }
+            makePowerUp();
+            makeDefenseUp();
+
+            makeEnvironment();
+            makeEnemies();
+            setupCamera(rootNode, 0, 750, 35);
+            camera.setY(65);
+            camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
+            initLight();
+        } else
+        {
+            bossfight();
+        }
+    }
+
+    private void bossfight()
     {
         stateManager.attach(bulletAppState);
         //bulletAppState.setDebugEnabled(true);
         makeFloor();
         makeCharacterController();
-        for(boolean wisdom : wisdomUnlock)
-        {
-            if(wisdom == false)
-            {
-                makeWisdom();
-                break;
-            }
-        }
-        makePowerUp();
-        makeDefenseUp();
-        
-        makeEnvironment();
+
         makeEnemies();
-        setupCamera(rootNode, 0, 750, 35);
+        setupCamera(rootNode, 0, 750, 20);
         camera.setY(65);
         camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
         initLight();
     }
-    
+
     protected void resetGame()
     {
         rootNode.detachAllChildren();
@@ -152,17 +172,17 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         tempEnemyHealth = 50;
         initSounds();
     }
-    
+
     protected void displayTitleScreen()
     {
         guiNode.detachAllChildren();
-        
+
         Geometry titleScreen = new Geometry("TitleScreen", new Quad(getScreenWidth(), getScreenHeight()));
         Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         mat.setColor("Color", ColorRGBA.White);
         titleScreen.setMaterial(mat);
         titleScreen.setLocalTranslation(0, 0, 0);
-        
+
         Geometry titleBox = new Geometry("TitleBox", new Quad(getScreenWidth() / 1.7f, getScreenHeight() / 1.7f));
         Material mat2 = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         mat2.setColor("Color", ColorRGBA.White);
@@ -170,94 +190,94 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         mat2.setTexture("ColorMap", title);
         titleBox.setMaterial(mat2);
         titleBox.setLocalTranslation(getScreenWidth() / 4.5f, getScreenHeight() / 3.9f, 0);
-        
+
         guiFont = assetManager.loadFont("Interface/Fonts/Default.fnt");
         BitmapText continueText = new BitmapText(guiFont, false);
         continueText.setColor(ColorRGBA.LightGray);
         continueText.setSize(guiFont.getCharSet().getRenderedSize());
         continueText.setText("Press SPACE to continue...");
         continueText.setLocalTranslation(getScreenWidth() / 2.4f, getScreenHeight() / 4.2f, 0);
-        
+
         guiNode.attachChild(titleScreen);
         guiNode.attachChild(titleBox);
         guiNode.attachChild(continueText);
     }
-    
+
     protected void displayGameOver()
     {
         // Removing all children so the screen only displays GAME OVER
         guiNode.detachAllChildren();
-        
+
         Geometry gameOverScreen = new Geometry("GameOverScreen", new Quad(getScreenWidth(), getScreenHeight()));
         Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         mat.setColor("Color", ColorRGBA.Black);
         gameOverScreen.setMaterial(mat);
         gameOverScreen.setLocalTranslation(0, 0, 0);
-        
-        
+
+
         // placing the GAME OVER message approximately in the center of the screen
         guiFont = assetManager.loadFont("Interface/Fonts/Default.fnt");
         BitmapText gameOverText = new BitmapText(guiFont, false);
         gameOverText.setSize(guiFont.getCharSet().getRenderedSize());
         gameOverText.setText("GAME OVER");
         gameOverText.setLocalTranslation(getScreenWidth() / 2 - 20, getScreenHeight() / 2, 0);
-        
+
         guiNode.attachChild(gameOverScreen);
         guiNode.attachChild(gameOverText);
     }
-    
+
     private void displayMenu()
     {
-        Geometry background = new Geometry("MenuBackground", new Quad(getScreenWidth() * (2.0f/3.0f), getScreenHeight() * (2.0f/3.0f)));
+        Geometry background = new Geometry("MenuBackground", new Quad(getScreenWidth() * (2.0f / 3.0f), getScreenHeight() * (2.0f / 3.0f)));
         Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-        mat.setColor("Color", new ColorRGBA(0,0.5f,0.5f,0.75f));
+        mat.setColor("Color", new ColorRGBA(0, 0.5f, 0.5f, 0.75f));
         mat.getAdditionalRenderState().setBlendMode(BlendMode.Alpha);
         background.setMaterial(mat);
-        background.setLocalTranslation(getScreenWidth() * (0.5f/3.0f), getScreenHeight() * (0.5f/3.0f), 0);
-        
-        Geometry border = new Geometry("MenuBorder", new Quad(getScreenWidth() * (1.90f/3.0f), getScreenHeight() * (1.90f/3.0f)));
+        background.setLocalTranslation(getScreenWidth() * (0.5f / 3.0f), getScreenHeight() * (0.5f / 3.0f), 0);
+
+        Geometry border = new Geometry("MenuBorder", new Quad(getScreenWidth() * (1.90f / 3.0f), getScreenHeight() * (1.90f / 3.0f)));
         Material mat2 = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-        mat2.setColor("Color", new ColorRGBA(0,0.5f,0.75f,0.75f));
+        mat2.setColor("Color", new ColorRGBA(0, 0.5f, 0.75f, 0.75f));
         mat2.getAdditionalRenderState().setBlendMode(BlendMode.Alpha);
         border.setMaterial(mat2);
-        border.setLocalTranslation(getScreenWidth() * (0.55f/3.0f), getScreenHeight() * (0.55f/3.0f), 0);
-        
-        Geometry foreground = new Geometry("MenuBorder", new Quad(getScreenWidth() * (1.80f/3.0f), getScreenHeight() * (1.80f/3.0f)));
+        border.setLocalTranslation(getScreenWidth() * (0.55f / 3.0f), getScreenHeight() * (0.55f / 3.0f), 0);
+
+        Geometry foreground = new Geometry("MenuBorder", new Quad(getScreenWidth() * (1.80f / 3.0f), getScreenHeight() * (1.80f / 3.0f)));
         Material mat3 = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-        mat3.setColor("Color", new ColorRGBA(0,0.01f,0.05f,0.55f));
+        mat3.setColor("Color", new ColorRGBA(0, 0.01f, 0.05f, 0.55f));
         mat3.getAdditionalRenderState().setBlendMode(BlendMode.Alpha);
         foreground.setMaterial(mat3);
-        foreground.setLocalTranslation(getScreenWidth() * (0.60f/3.0f), getScreenHeight() * (0.60f/3.0f), 0);
-        
-        
-       
+        foreground.setLocalTranslation(getScreenWidth() * (0.60f / 3.0f), getScreenHeight() * (0.60f / 3.0f), 0);
+
+
+
         guiFont = assetManager.loadFont("Interface/Fonts/Default.fnt");
         BitmapText nameText = new BitmapText(guiFont, false);
         nameText.setSize(24);
-        nameText.setText(     "Name:\n"
-                            + "Life:\n"
-                            + "Power:\n"
-                            + "Defense:\n"
-                            + "Bliss:\n"
-                            + "Storytelling:\n");
-        nameText.setLocalTranslation(getScreenWidth() * (0.62f/3.0f), getScreenHeight() * (2.36f/3.0f), 0);
-        
+        nameText.setText("Name:\n"
+                + "Life:\n"
+                + "Power:\n"
+                + "Defense:\n"
+                + "Bliss:\n"
+                + "Storytelling:\n");
+        nameText.setLocalTranslation(getScreenWidth() * (0.62f / 3.0f), getScreenHeight() * (2.36f / 3.0f), 0);
+
         BitmapText statText = new BitmapText(guiFont, false);
         statText.setSize(24);
-        statText.setText(     "Kid #1\n"
-                            + sage.getHealth() + "/100\n"
-                            + sage.getAttack() + "\n"
-                            + sage.getDefense() + "\n"
-                            + sage.getBliss() + "\n"
-                            + sage.getStorytelling());
-        statText.setLocalTranslation(getScreenWidth() * (0.92f/3.0f), getScreenHeight() * (2.36f/3.0f), 0);
-        
+        statText.setText("Kid #1\n"
+                + sage.getHealth() + "/100\n"
+                + sage.getAttack() + "\n"
+                + sage.getDefense() + "\n"
+                + sage.getBliss() + "\n"
+                + sage.getStorytelling());
+        statText.setLocalTranslation(getScreenWidth() * (0.92f / 3.0f), getScreenHeight() * (2.36f / 3.0f), 0);
+
         BitmapText merchantText = new BitmapText(guiFont, false);
         merchantText.setSize(16);
         merchantText.setColor(ColorRGBA.LightGray);
         merchantText.setText("Spirit Merchant(L)");
-        merchantText.setLocalTranslation(getScreenWidth() * (0.62f/3.0f), getScreenHeight() * (0.70f/3.0f), 0);
-        
+        merchantText.setLocalTranslation(getScreenWidth() * (0.62f / 3.0f), getScreenHeight() * (0.70f / 3.0f), 0);
+
         guiNode.attachChild(background);
         guiNode.attachChild(border);
         guiNode.attachChild(foreground);
@@ -265,161 +285,159 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         guiNode.attachChild(statText);
         guiNode.attachChild(merchantText);
     }
-    
+
     protected void displayMerchant()
     {
-        Geometry background = new Geometry("MenuBackground", new Quad(getScreenWidth() * (2.0f/3.0f), getScreenHeight() * (2.0f/3.0f)));
+        Geometry background = new Geometry("MenuBackground", new Quad(getScreenWidth() * (2.0f / 3.0f), getScreenHeight() * (2.0f / 3.0f)));
         Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-        mat.setColor("Color", new ColorRGBA(0,0.5f,0.5f,0.75f));
+        mat.setColor("Color", new ColorRGBA(0, 0.5f, 0.5f, 0.75f));
         mat.getAdditionalRenderState().setBlendMode(BlendMode.Alpha);
         background.setMaterial(mat);
-        background.setLocalTranslation(getScreenWidth() * (0.5f/3.0f), getScreenHeight() * (0.5f/3.0f), 0);
-        
-        Geometry border = new Geometry("MenuBorder", new Quad(getScreenWidth() * (1.90f/3.0f), getScreenHeight() * (1.90f/3.0f)));
+        background.setLocalTranslation(getScreenWidth() * (0.5f / 3.0f), getScreenHeight() * (0.5f / 3.0f), 0);
+
+        Geometry border = new Geometry("MenuBorder", new Quad(getScreenWidth() * (1.90f / 3.0f), getScreenHeight() * (1.90f / 3.0f)));
         Material mat2 = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-        mat2.setColor("Color", new ColorRGBA(0,0.5f,0.75f,0.75f));
+        mat2.setColor("Color", new ColorRGBA(0, 0.5f, 0.75f, 0.75f));
         mat2.getAdditionalRenderState().setBlendMode(BlendMode.Alpha);
         border.setMaterial(mat2);
-        border.setLocalTranslation(getScreenWidth() * (0.55f/3.0f), getScreenHeight() * (0.55f/3.0f), 0);
-        
-        Geometry foreground = new Geometry("MenuBorder", new Quad(getScreenWidth() * (1.80f/3.0f), getScreenHeight() * (1.80f/3.0f)));
+        border.setLocalTranslation(getScreenWidth() * (0.55f / 3.0f), getScreenHeight() * (0.55f / 3.0f), 0);
+
+        Geometry foreground = new Geometry("MenuBorder", new Quad(getScreenWidth() * (1.80f / 3.0f), getScreenHeight() * (1.80f / 3.0f)));
         Material mat3 = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-        mat3.setColor("Color", new ColorRGBA(0,0.01f,0.05f,0.55f));
+        mat3.setColor("Color", new ColorRGBA(0, 0.01f, 0.05f, 0.55f));
         mat3.getAdditionalRenderState().setBlendMode(BlendMode.Alpha);
         foreground.setMaterial(mat3);
-        foreground.setLocalTranslation(getScreenWidth() * (0.60f/3.0f), getScreenHeight() * (0.60f/3.0f), 0);
-        
-        Geometry merchant = new Geometry("merchant", new Quad(getScreenWidth() * (0.60f/3.0f), getScreenHeight() * (0.90f/3.0f)));
+        foreground.setLocalTranslation(getScreenWidth() * (0.60f / 3.0f), getScreenHeight() * (0.60f / 3.0f), 0);
+
+        Geometry merchant = new Geometry("merchant", new Quad(getScreenWidth() * (0.60f / 3.0f), getScreenHeight() * (0.90f / 3.0f)));
         Material mat4 = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         Texture merchantTexture = assetManager.loadTexture("Textures/SpiritMerchant.png"); // Texture needs work - shows up black
         mat4.setTexture("ColorMap", merchantTexture);
         merchant.setMaterial(mat4);
-        merchant.setLocalTranslation(getScreenWidth() * (1.1f/3.0f), getScreenHeight() * (1.2f/3.0f), 0);
-        
+        merchant.setLocalTranslation(getScreenWidth() * (1.1f / 3.0f), getScreenHeight() * (1.2f / 3.0f), 0);
+
         guiFont = assetManager.loadFont("Interface/Fonts/Default.fnt");
         BitmapText speechText = new BitmapText(guiFont, false);
         speechText.setSize(24);
-        if(textIndex == 0)
+        if (textIndex == 0)
         {
             speechText.setText("Ah! Oh no...");
-        }
-        else if(textIndex == 1)
+        } else if (textIndex == 1)
         {
             speechText.setText("You weren't supposed to find me.");
-        }
-        else if(textIndex == 2)
+        } else if (textIndex == 2)
         {
             speechText.setText("Well, since you're here, do you have any of those delicious cubes with you?");
-        }
-        else if(textIndex == 3)
+        } else if (textIndex == 3)
         {
             speechText.setText("You know, the blue and green ones!");
-        }
-        else if(textIndex == 4)
+        } else if (textIndex == 4)
         {
             speechText.setText("I just love those. Oh, and I'll give you something good for them! I promise!");
-        }
-        else if(metMerchant)
+        } else if (metMerchant)
         {
-            if(gaveMerchant)
+            if (gaveMerchant)
             {
                 speechText.setText("Oh th-thank you so much! Here, take this!");
-            }
-            else
+            } else
             {
                 speechText.setText("J-just, press N to give me a blue one, or M to give me a green one.");
             }
         }
-        speechText.setLocalTranslation(getScreenWidth() * (0.62f/3.0f), getScreenHeight() * (1.0f/3.0f), 0);
-        
+        speechText.setLocalTranslation(getScreenWidth() * (0.62f / 3.0f), getScreenHeight() * (1.0f / 3.0f), 0);
+
         guiNode.attachChild(background);
         guiNode.attachChild(border);
         guiNode.attachChild(foreground);
         guiNode.attachChild(merchant);
         guiNode.attachChild(speechText);
     }
-    
+
     protected void displayWisdom()
     {
-        Geometry background = new Geometry("MenuBackground", new Quad(getScreenWidth() * (2.0f/3.0f), getScreenHeight() * (2.0f/3.0f)));
+        Geometry background = new Geometry("MenuBackground", new Quad(getScreenWidth() * (2.0f / 3.0f), getScreenHeight() * (2.0f / 3.0f)));
         Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-        mat.setColor("Color", new ColorRGBA(0,0.5f,0.5f,0.75f));
+        mat.setColor("Color", new ColorRGBA(0, 0.5f, 0.5f, 0.75f));
         mat.getAdditionalRenderState().setBlendMode(BlendMode.Alpha);
         background.setMaterial(mat);
-        background.setLocalTranslation(getScreenWidth() * (0.5f/3.0f), getScreenHeight() * (0.5f/3.0f), 0);
-        
-        Geometry border = new Geometry("MenuBorder", new Quad(getScreenWidth() * (1.90f/3.0f), getScreenHeight() * (1.90f/3.0f)));
+        background.setLocalTranslation(getScreenWidth() * (0.5f / 3.0f), getScreenHeight() * (0.5f / 3.0f), 0);
+
+        Geometry border = new Geometry("MenuBorder", new Quad(getScreenWidth() * (1.90f / 3.0f), getScreenHeight() * (1.90f / 3.0f)));
         Material mat2 = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-        mat2.setColor("Color", new ColorRGBA(0,0.5f,0.75f,0.75f));
+        mat2.setColor("Color", new ColorRGBA(0, 0.5f, 0.75f, 0.75f));
         mat2.getAdditionalRenderState().setBlendMode(BlendMode.Alpha);
         border.setMaterial(mat2);
-        border.setLocalTranslation(getScreenWidth() * (0.55f/3.0f), getScreenHeight() * (0.55f/3.0f), 0);
-        
-        Geometry foreground = new Geometry("MenuBorder", new Quad(getScreenWidth() * (1.80f/3.0f), getScreenHeight() * (1.80f/3.0f)));
+        border.setLocalTranslation(getScreenWidth() * (0.55f / 3.0f), getScreenHeight() * (0.55f / 3.0f), 0);
+
+        Geometry foreground = new Geometry("MenuBorder", new Quad(getScreenWidth() * (1.80f / 3.0f), getScreenHeight() * (1.80f / 3.0f)));
         Material mat3 = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-        mat3.setColor("Color", new ColorRGBA(0,0.01f,0.05f,0.55f));
+        mat3.setColor("Color", new ColorRGBA(0, 0.01f, 0.05f, 0.55f));
         mat3.getAdditionalRenderState().setBlendMode(BlendMode.Alpha);
         foreground.setMaterial(mat3);
-        foreground.setLocalTranslation(getScreenWidth() * (0.60f/3.0f), getScreenHeight() * (0.60f/3.0f), 0);
-        
+        foreground.setLocalTranslation(getScreenWidth() * (0.60f / 3.0f), getScreenHeight() * (0.60f / 3.0f), 0);
+
         guiFont = assetManager.loadFont("Interface/Fonts/Default.fnt");
         BitmapText wisdomText = new BitmapText(guiFont, false);
         wisdomText.setSize(24);
-        if(wisdomNumber == 0 && wisdomUnlock[wisdomNumber] == false)
+        if (wisdomNumber == 0 && wisdomUnlock[wisdomNumber] == false)
         {
             //wisdomUnlock[wisdomNumber] = true;
             wisdomText.setText("The CoDE\n"
-                            + "Mary,\n"
-                            + "Mary,\n"
-                            + "Paul.\n\n"
-                            + "MMP\n");
+                    + "Mary,\n"
+                    + "Mary,\n"
+                    + "Paul.\n\n"
+                    + "MMP\n");
         }
-        if(wisdomNumber == 1 && wisdomUnlock[wisdomNumber] == false)
+        if (wisdomNumber == 1 && wisdomUnlock[wisdomNumber] == false)
         {
             //wisdomUnlock[wisdomNumber] = true;
             wisdomText.setText("How many times must you be told?\n"
-                            + "...\n"
-                            + "I said drain it completely, every time.\n"
-                            + "...\n\n"
-                            + "You have nothing to say for yourself, as usual.\n");
+                    + "...\n"
+                    + "I said drain it completely, every time.\n"
+                    + "...\n\n"
+                    + "You have nothing to say for yourself, as usual.\n");
         }
-        if(wisdomNumber == 2 && wisdomUnlock[wisdomNumber] == false)
+        if (wisdomNumber == 2 && wisdomUnlock[wisdomNumber] == false)
         {
             //wisdomUnlock[wisdomNumber] = true;
             wisdomText.setText("Quickly, this way!\n"
-                            + "Have you got the amulet?\n"
-                            + "O-of course I do!\n"
-                            + "Good, all may not be lost.\n"
-                            + "When you get to the end, take the left door, do you understand?\n\n"
-                            + "The left, not the right.\n\n");
+                    + "Have you got the amulet?\n"
+                    + "O-of course I do!\n"
+                    + "Good, all may not be lost.\n"
+                    + "When you get to the end, take the left door, do you understand?\n\n"
+                    + "The left, not the right.\n\n");
         }
-        if(wisdomNumber == 3 && wisdomUnlock[wisdomNumber] == false)
+        if (wisdomNumber == 3 && wisdomUnlock[wisdomNumber] == false)
         {
             //wisdomUnlock[wisdomNumber] = true;
             wisdomText.setText("You know, things weren't always this way.\n"
-                            + "Really?\n"
-                            + "Really.\n"
-                            + "She used to fancy me quite a bit actually.\n"
-                            + "What happened?\n\n"
-                            + "Ah, that is a story for another time, come along.\n\n");
+                    + "Really?\n"
+                    + "Really.\n"
+                    + "She used to fancy me quite a bit actually.\n"
+                    + "What happened?\n\n"
+                    + "Ah, that is a story for another time, come along.\n\n");
         }
-        wisdomText.setLocalTranslation(getScreenWidth() * (0.62f/3.0f), getScreenHeight() * (2.36f/3.0f), 0);
-        
+        wisdomText.setLocalTranslation(getScreenWidth() * (0.62f / 3.0f), getScreenHeight() * (2.36f / 3.0f), 0);
+
         guiNode.attachChild(background);
         guiNode.attachChild(border);
         guiNode.attachChild(foreground);
         guiNode.attachChild(wisdomText);
     }
-    
+
     protected void makeCharacterController()
     {
         results = new CollisionResults();
         player = new Node();
         sage.setNode(player);
         sage.getNode().setLocalTranslation(rootNode.getLocalTranslation());
+        if (bosstest == true)
+        {
+            sage.getNode().setLocalTranslation(-20f, 0, -10f);
+        }
         sage.getNode().setName("PlayerNode");
-        
-        Spatial playerBox = (Node)assetManager.loadModel("Models/Oto/Oto.mesh.xml");
+
+        Spatial playerBox = (Node) assetManager.loadModel("Models/Oto/Oto.mesh.xml");
         Node animationNode = (Node) playerBox;
         playerBox.move(0f, 6f, 0f);
         playerBox.setName("Player");
@@ -429,107 +447,124 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         playerBox.setMaterial(mat);
         sage.getNode().attachChild(playerBox);
         rootNode.attachChild(sage.getNode());
-        
+
         animationControl = animationNode.getControl(AnimControl.class);
         animationControl.addListener(this);
         animationChannel = animationControl.createChannel();
         animationChannel.setAnim("stand");
         animationChannel.setLoopMode(LoopMode.Loop);
         //for (String anim : animationControl.getAnimationNames()) { System.out.println(anim); }
-        
+
         // Width, height, weight for BCC params
         playerControl = new BetterCharacterControl(1.5f, 12f, 8000f);
         sage.getNode().addControl(playerControl);
-        
-        bulletAppState.getPhysicsSpace().add(playerControl); 
+
+        bulletAppState.getPhysicsSpace().add(playerControl);
         bulletAppState.getPhysicsSpace().addAll(sage.getNode());
-        bulletAppState.getPhysicsSpace().addCollisionListener(sage); 
+        bulletAppState.getPhysicsSpace().addCollisionListener(sage);
     }
-    
+
     // Unused method - still here as a reference if needed
     protected void makeEnemy(Node room)
     {
         Node enemyNode = new Node();
         enemyNode.setName("EnemyNode");
-        Sphere enemySphere = new Sphere(32,32,2f);
+        Sphere enemySphere = new Sphere(32, 32, 2f);
         //Spatial enemyBox = new Geometry("Enemy", enemySphere);
         Spatial enemyBox = assetManager.loadModel("Models/EnemyJointless/EnemyJointless.j3o");
-        enemyBox.setLocalTranslation(room.getLocalTranslation().x + (float)getNumRooms(-16, 16), room.getLocalTranslation().y + 6f, room.getLocalTranslation().z + (float)getNumRooms(-16, 16));
+        enemyBox.setLocalTranslation(room.getLocalTranslation().x + (float) getNumRooms(-16, 16), room.getLocalTranslation().y + 6f, room.getLocalTranslation().z + (float) getNumRooms(-16, 16));
         enemyBox.setName("Enemy");
         Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-        mat.setColor("Color", new ColorRGBA(.5f,.5f,.5f,.5f));
+        mat.setColor("Color", new ColorRGBA(.5f, .5f, .5f, .5f));
         mat.getAdditionalRenderState().setBlendMode(BlendMode.Alpha);
         enemyBox.setMaterial(mat);
         enemyNode.attachChild(enemyBox);
-        
+
         RigidBodyControl enemyCollision = new RigidBodyControl(1.0f);
         enemyBox.addControl(enemyCollision);
-        
+
         bulletAppState.getPhysicsSpace().add(enemyCollision);
-        
+
         room.attachChild(enemyNode);
     }
-    
+
     // Make enemy that is actually used
     protected void makeEnemy(Node room, double xLocation, double zLocation, String model, String texture)
     {
         Spatial enemy = assetManager.loadModel("Models/" + model);
-        
+
         room.attachChild(enemy);
-        
+
         enemy.setName("Enemy");
         enemy.setUserData("health", 500);
+
         enemy.setLocalTranslation((float) xLocation, 2f, (float) zLocation);
         Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         //mat.setColor("Color", ColorRGBA.Brown);
-        
+
         enemy.setMaterial((Material) assetManager.loadMaterial("Materials/Rock_1.j3m"));
-        
-        enemyCollision[enemyCollisionIndex] = new BetterCharacterControl(0.5f, 6f, 1000f);
+
+        if (bosstest)
+        {
+            mat.setColor("Color", ColorRGBA.Brown);
+            enemy.setMaterial(mat);
+            enemy.scale(4);
+            enemyCollision[enemyCollisionIndex] = new BetterCharacterControl(2, 24, 4000);
+            bossCollisionIndex = enemyCollisionIndex;
+            enemyCollision[bossCollisionIndex].setViewDirection(sage.getNode().getLocalTranslation());
+        } else
+        {
+            enemyCollision[enemyCollisionIndex] = new BetterCharacterControl(0.5f, 6f, 1000f);
+        }
         enemy.addControl(enemyCollision[enemyCollisionIndex]);
         bulletAppState.getPhysicsSpace().add(enemyCollision[enemyCollisionIndex]);
-      
+
+
         enemyCollisionIndex++;
     }
-    
+
     // Called once to make all of the enemies for the entire floor
     protected void makeEnemies()
     {
-        double xLocation;
-        double zLocation;
-        
-        for (Node room : rooms)
+        if (bosstest == false)
         {
-            for (int row = 2; row <= roomGridWidth; row++)
+            double xLocation;
+            double zLocation;
+
+            for (Node room : rooms)
             {
-                for (int col = 2; col <= roomGridHeight; col++)
+                for (int row = 2; row <= roomGridWidth; row++)
                 {
-                    if (room.getUserData("EnvironmentObject " + row + "-" + col))
+                    for (int col = 2; col <= roomGridHeight; col++)
                     {
-                        // do nothing b/c environment exists there
-                    }
-                    else
-                    {
-                        if(getRandom(20) == 0) // 5% chance to make an enemy in each location
+                        if (room.getUserData("EnvironmentObject " + row + "-" + col))
                         {
-                            xLocation = getRoomItemXLocation(row);
-                            zLocation = getRoomItemZLocation(col);
-                            makeEnemy(room, xLocation, zLocation, "EnemyJointless/EnemyJointless.j3o", "RockTexture.jpg");
-                        }
-                        else
+                            // do nothing b/c environment exists there
+                        } else
                         {
-                            continue;
+                            if (getRandom(20) == 0) // 5% chance to make an enemy in each location
+                            {
+                                xLocation = getRoomItemXLocation(row);
+                                zLocation = getRoomItemZLocation(col);
+                                makeEnemy(room, xLocation, zLocation, "EnemyJointless/EnemyJointless.j3o", "RockTexture.jpg");
+                            } else
+                            {
+                                continue;
+                            }
                         }
                     }
                 }
             }
+        } else
+        {
+            makeEnemy(rootNode, 0, 0, "EnemyBossHead/EnemyBossHead.j3o", "RockTexture.jpg");
         }
     }
-    
+
     protected void makePowerUp()
     {
         Node powerUpNode = new Node();
-        Box box = new Box(1f,1f,1f);
+        Box box = new Box(1f, 1f, 1f);
         powerUpNode.setName("PowerUpNode");
         Spatial powerUpBox = new Geometry("PowerUp", box);
         powerUpBox.move(-8f, 6f, 3f);
@@ -538,20 +573,20 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         mat.setColor("Color", ColorRGBA.Blue);
         powerUpBox.setMaterial(mat);
         powerUpNode.attachChild(powerUpBox);
-        
+
         RigidBodyControl powerUpCollision = new RigidBodyControl(0.1f);
-        
+
         powerUpBox.addControl(powerUpCollision);
-        
+
         bulletAppState.getPhysicsSpace().add(powerUpCollision);
-        
+
         rootNode.attachChild(powerUpNode);
     }
-    
+
     protected void makeDefenseUp()
     {
         Node defenseUpNode = new Node();
-        Box box = new Box(1f,1f,1f);
+        Box box = new Box(1f, 1f, 1f);
         defenseUpNode.setName("DefenseUpNode");
         Spatial defenseUpBox = new Geometry("DefenseUp", box);
         defenseUpBox.move(-2f, 6f, 6f);
@@ -560,25 +595,25 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         mat.setColor("Color", ColorRGBA.Green);
         defenseUpBox.setMaterial(mat);
         defenseUpNode.attachChild(defenseUpBox);
-        
+
         RigidBodyControl powerUpCollision = new RigidBodyControl(0.1f);
-        
+
         defenseUpBox.addControl(powerUpCollision);
-        
+
         bulletAppState.getPhysicsSpace().add(powerUpCollision);
-        
+
         rootNode.attachChild(defenseUpNode);
     }
-    
+
     protected void makeWisdom()
     {
-        if(wisdomNumber < 0)
+        if (wisdomNumber < 0)
         {
-             wisdomNumber = getWisdomRandom(4);
+            wisdomNumber = getWisdomRandom(4);
         }
-        
+
         Node wisdomNode = new Node();
-        Box box = new Box(1f,1f,1f);
+        Box box = new Box(1f, 1f, 1f);
         wisdomNode.setName("WisdomNode");
         Spatial wisdomBox = new Geometry("Wisdom", box);
         wisdomBox.move(-2f, 6f, 6f);
@@ -587,159 +622,159 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         mat.setColor("Color", ColorRGBA.White);
         wisdomBox.setMaterial(mat);
         wisdomNode.attachChild(wisdomBox);
-        
+
         RigidBodyControl wisdomCollision = new RigidBodyControl(0.1f);
-        
+
         wisdomBox.addControl(wisdomCollision);
-        
+
         bulletAppState.getPhysicsSpace().add(wisdomCollision);
-        
+
         rootNode.attachChild(wisdomNode);
     }
-    
+
     protected void playerAttack()
     {
         Node attackNode = new Node();
         attackNode.setName("attackNode");
         Spatial attackBox = assetManager.loadModel("Models/RockSpike/RockSpike.j3o");
-        attackBox.setLocalTranslation(sage.getNode().getLocalTranslation().x + (float)getNumRooms(-16, 16), 70f, sage.getNode().getLocalTranslation().z + (float)getNumRooms(-16, 16));
+        attackBox.setLocalTranslation(sage.getNode().getLocalTranslation().x + (float) getNumRooms(-16, 16), 70f, sage.getNode().getLocalTranslation().z + (float) getNumRooms(-16, 16));
         attackBox.setName("Attack");
         attackBox.setMaterial((Material) assetManager.loadMaterial("Materials/Rock_1.j3m"));
         attackNode.attachChild(attackBox);
-        
+
         RigidBodyControl attackCollision = new RigidBodyControl(8.0f);
         attackBox.addControl(attackCollision);
-        
+
         bulletAppState.getPhysicsSpace().add(attackCollision);
-        
+
         sage.getNode().attachChild(attackNode);
     }
-    
+
     protected void updateHUD()
     {
         guiNode.detachAllChildren();
-        
+
         // Larger than the health indicator within the healthbar
         Geometry healthbarOutline = new Geometry("HealthbarOutline", new Quad(406f, 26f));
         Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         mat.setColor("Color", ColorRGBA.White);
         healthbarOutline.setMaterial(mat);
         healthbarOutline.setLocalTranslation(20, 20, 0);
-        
+
         guiNode.attachChild(healthbarOutline);
-        
+
         Geometry healthbarBackground = new Geometry("HealthbarBackground", new Quad(400f, 20f));
         Material mat2 = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         mat2.setColor("Color", ColorRGBA.Black);
         healthbarBackground.setMaterial(mat2);
         healthbarBackground.setLocalTranslation(25, 25, 0);
-       
+
         guiNode.attachChild(healthbarBackground);
-        
+
         Geometry healthbar = new Geometry("Healthbar", new Quad(sage.getHealth() * 4, 20f));
         Material mat3 = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         mat3.setColor("Color", ColorRGBA.Red);
         healthbar.setMaterial(mat3);
         healthbar.setLocalTranslation(25, 25, 0);
-        
+
         guiNode.attachChild(healthbar);
-        
+
         guiFont = assetManager.loadFont("Interface/Fonts/Default.fnt");
         BitmapText numPotions = new BitmapText(guiFont, false);
         numPotions.setColor(ColorRGBA.White);
         numPotions.setSize(24);
         numPotions.setText(Integer.toString(sage.getPotions()));
         numPotions.setLocalTranslation(430f, 50f, 0);
-        
+
         guiNode.attachChild(numPotions);
-        
+
         Geometry potionIcon = new Geometry("PotionIcon", new Quad(30f, 30f));
         Material mat4 = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         Texture potionTexture = assetManager.loadTexture("Textures/potionImage.png");
         mat4.setTexture("ColorMap", potionTexture);
         potionIcon.setMaterial(mat4);
         potionIcon.setLocalTranslation(450f, 20f, 0);
-        
+
         guiNode.attachChild(potionIcon);
-        
+
         guiFont = assetManager.loadFont("Interface/Fonts/Default.fnt");
         BitmapText numPowerUp = new BitmapText(guiFont, false);
         numPowerUp.setColor(ColorRGBA.White);
         numPowerUp.setSize(24);
         numPowerUp.setText(Integer.toString(sage.getNumPowerUp()));
         numPowerUp.setLocalTranslation(490f, 50f, 0);
-        
+
         guiNode.attachChild(numPowerUp);
-        
+
         Geometry powerUpIcon = new Geometry("PowerUpIcon", new Quad(30f, 30f));
         Material mat5 = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         mat5.setColor("Color", ColorRGBA.Blue);
         powerUpIcon.setMaterial(mat5);
         powerUpIcon.setLocalTranslation(510f, 20f, 0);
-        
+
         guiNode.attachChild(powerUpIcon);
-        
+
         guiFont = assetManager.loadFont("Interface/Fonts/Default.fnt");
         BitmapText numDefenseUp = new BitmapText(guiFont, false);
         numDefenseUp.setColor(ColorRGBA.White);
         numDefenseUp.setSize(24);
         numDefenseUp.setText(Integer.toString(sage.getNumDefenseUp()));
         numDefenseUp.setLocalTranslation(550f, 50f, 0);
-        
+
         guiNode.attachChild(numDefenseUp);
-        
+
         Geometry defenseUpIcon = new Geometry("DefenseUpIcon", new Quad(30f, 30f));
         Material mat6 = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         mat6.setColor("Color", ColorRGBA.Green);
         defenseUpIcon.setMaterial(mat6);
         defenseUpIcon.setLocalTranslation(570f, 20f, 0);
-        
+
         guiNode.attachChild(defenseUpIcon);
     }
-    
+
     // Method for all character status related updates - e.g. isAlive, isPoisoned, isAsleep (if we ever do anything like this
     protected void updateCharacterStatus()
     {
-        if(sage.getHealth() <= 0)
+        if (sage.getHealth() <= 0)
         {
             endGameSound.playInstance();
             gameOver = true;
         }
-        if(!gameOver && !atTitleScreen)
+        if (!gameOver && !atTitleScreen)
         {
-            walkingDirection.set(0,0,0);
-            puppetWalkingDirection.set(0,0,0);
-            if(sage.getMoveLeft())
+            walkingDirection.set(0, 0, 0);
+            puppetWalkingDirection.set(0, 0, 0);
+            if (sage.getMoveLeft())
             {
-                walkingDirection.addLocal(-sage.getSpeed() * 7,0,0);
-                puppetWalkingDirection.addLocal(sage.getSpeed() * 7,0,0);
+                walkingDirection.addLocal(-sage.getSpeed() * 7, 0, 0);
+                puppetWalkingDirection.addLocal(sage.getSpeed() * 7, 0, 0);
             }
-            if(sage.getMoveUp())
+            if (sage.getMoveUp())
             {
-                walkingDirection.addLocal(0,0,-sage.getSpeed() * 7);
-                puppetWalkingDirection.addLocal(0,0,sage.getSpeed() * 7);
+                walkingDirection.addLocal(0, 0, -sage.getSpeed() * 7);
+                puppetWalkingDirection.addLocal(0, 0, sage.getSpeed() * 7);
             }
-            if(sage.getMoveRight())
+            if (sage.getMoveRight())
             {
-                walkingDirection.addLocal(sage.getSpeed() * 7,0,0);
-                puppetWalkingDirection.addLocal(-sage.getSpeed() * 7,0,0);
+                walkingDirection.addLocal(sage.getSpeed() * 7, 0, 0);
+                puppetWalkingDirection.addLocal(-sage.getSpeed() * 7, 0, 0);
             }
-            if(sage.getMoveDown())
+            if (sage.getMoveDown())
             {
-                walkingDirection.addLocal(0,0,sage.getSpeed() * 7);
-                puppetWalkingDirection.addLocal(0,0,-sage.getSpeed() * 7);
+                walkingDirection.addLocal(0, 0, sage.getSpeed() * 7);
+                puppetWalkingDirection.addLocal(0, 0, -sage.getSpeed() * 7);
             }
             playerControl.setWalkDirection(walkingDirection);
         }
     }
-    
+
     protected void updateEnemyStatus()
     {
-        if(!gameOver && !atTitleScreen)
+        if (!gameOver && !atTitleScreen && !bosstest)
         {
-            for(int i = 0; i < enemyCollision.length; i++)
+            for (int i = 0; i < enemyCollision.length; i++)
             {
-                if(enemyCollision[i] == null)
+                if (enemyCollision[i] == null)
                 {
                     break;
                 }
@@ -748,7 +783,7 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
             }
         }
     }
-    
+
     // UNUSED METHOD
     protected void makePlayer()
     {
@@ -762,7 +797,7 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         mat.setColor("Color", ColorRGBA.Magenta);
         playerBox.setMaterial(mat);
         sage.getNode().attachChild(playerBox);
-        
+
         // Adding the player to the physical space (allowing for collision)
         playerCollision = new RigidBodyControl(0.1f);
         playerBox.addControl(playerCollision);
@@ -771,30 +806,39 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
 
         //playerRay = new Ray(player.getChild("Player").getLocalTranslation(), rootNode.getChild("Top Wall 2").getLocalTranslation());
         //playerRay.setLimit(.00001f);
-        
+
         rootNode.attachChild(sage.getNode());
     }
 
     // Create a floor with multiple rooms
     protected void makeFloor()
     {
-        // Change background color of the display
-        viewPort.setBackgroundColor(new ColorRGBA(0.7f, 0.8f, 1f, 1f));
+        if (bosstest == false)
+        {
+            // Change background color of the display
+            viewPort.setBackgroundColor(new ColorRGBA(0.7f, 0.8f, 1f, 1f));
+            int numRooms = getNumRooms(minRooms, maxRooms);
+            System.out.println(numRooms);
 
-        int numRooms = getNumRooms(minRooms, maxRooms);
-        System.out.println(numRooms);
-        // Determining the number of rooms that will be on the current floor
-        rooms = new Node[numRooms];
+            // Determining the number of rooms that will be on the current floor
+            rooms = new Node[numRooms];
 
-        // 2400 is an arbitrary large value to avoid indexing issues
-        wallCollision = new RigidBodyControl[numRooms * 2400];
-        floorCollision = new RigidBodyControl[numRooms];
-        environmentCollision = new RigidBodyControl[numRooms * 2400];
-        enemyCollision = new BetterCharacterControl[numRooms * 1200];
+            // 2400 is an arbitrary large value to avoid indexing issues
+            wallCollision = new RigidBodyControl[numRooms * 2400];
+            floorCollision = new RigidBodyControl[numRooms];
+            environmentCollision = new RigidBodyControl[numRooms * 2400];
+            enemyCollision = new BetterCharacterControl[numRooms * 1200];
 
-        initRooms();
-        initNeighborData();
-        initEnvironmentData();
+            initRooms();
+            initNeighborData();
+            initEnvironmentData();
+        } else
+        {
+            wallCollision = new RigidBodyControl[2400];
+            floorCollision = new RigidBodyControl[1];
+            environmentCollision = new RigidBodyControl[2400];
+            enemyCollision = new BetterCharacterControl[1200];
+        }
 
         // Initially build the room around the root node
         makeGround(rootNode, 0);
@@ -808,157 +852,158 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         rootNode.setUserData("row", row);
         rootNode.setUserData("col", col);
 
-        // Looping efficiency variables
-        int lastRoll = -1;
-        int breakCounter = 0;
-
-        for (int i = 0; i < rooms.length; i++)
+        if (bosstest == false)
         {
-            breakCounter++;
+            // Looping efficiency variables
+            int lastRoll = -1;
+            int breakCounter = 0;
 
-            // Selecting the type of the next room randomly
-            int nextRoom = getRandom(4);
-
-            // Restart if the same failed number was rolled again
-            if (lastRoll == nextRoom)
+            for (int i = 0; i < rooms.length; i++)
             {
-                i--;
-                continue;
-            }
+                breakCounter++;
 
-            // Break if it may be caught in an endless loop
-            if (breakCounter > 20)
-            {
-                break;
-            }
+                // Selecting the type of the next room randomly
+                int nextRoom = getRandom(4);
 
-            // Number values represent a direction
-            // 0 -> left
-            // 1 -> up
-            // 2 -> right
-            // 3 -> down
-
-            if (nextRoom == 0)
-            {
-                col -= 1;
-
-                // If the coordinates are not already taken - continue
-                if (!checkRoomCoordinates(row, col))
+                // Restart if the same failed number was rolled again
+                if (lastRoll == nextRoom)
                 {
-                    rooms[i].setLocalTranslation(-70.001f, 0f, 0f);
-                    rooms[i].setUserData("row", row);
-                    rooms[i].setUserData("col", col);
-                    rooms[i].setUserData("rightNeighbor", true);
-                    if (i > 0)
-                    {
-                        rooms[i - 1].setUserData("leftNeighbor", true);
-                    } 
-                    else
-                    {
-                        rootNode.setUserData("leftNeighbor", true);
-                    }
-                } else
-                {
-                    lastRoll = 0;
-                    col += 1;
                     i--;
                     continue;
                 }
-            }
-            if (nextRoom == 1)
-            {
-                row -= 1;
 
-                if (!checkRoomCoordinates(row, col))
+                // Break if it may be caught in an endless loop
+                if (breakCounter > 20)
                 {
-                    rooms[i].setLocalTranslation(0f, 0f, -50.001f);
-                    rooms[i].setUserData("row", row);
-                    rooms[i].setUserData("col", col);
-                    rooms[i].setUserData("bottomNeighbor", true);
-                    if (i > 0)
-                    {
-                        rooms[i - 1].setUserData("topNeighbor", true);
-                    } else
-                    {
-                        rootNode.setUserData("topNeighbor", true);
-                    }
-
-                } else
-                {
-                    lastRoll = 1;
-                    row += 1;
-                    i--;
-                    continue;
+                    break;
                 }
-            }
-            if (nextRoom == 2)
-            {
-                col += 1;
 
-                if (!checkRoomCoordinates(row, col))
+                // Number values represent a direction
+                // 0 -> left
+                // 1 -> up
+                // 2 -> right
+                // 3 -> down
+
+                if (nextRoom == 0)
                 {
-                    rooms[i].setLocalTranslation(70.001f, 0f, 0f);
-                    rooms[i].setUserData("row", row);
-                    rooms[i].setUserData("col", col);
-                    rooms[i].setUserData("leftNeighbor", true);
-                    if (i > 0)
-                    {
-                        rooms[i - 1].setUserData("rightNeighbor", true);
-                    } else
-                    {
-                        rootNode.setUserData("rightNeighbor", true);
-                    }
-                } else
-                {
-                    lastRoll = 2;
                     col -= 1;
-                    i--;
-                    continue;
-                }
-            }
-            if (nextRoom == 3)
-            {
-                row += 1;
 
-                if (!checkRoomCoordinates(row, col))
-                {
-                    rooms[i].setLocalTranslation(0f, 0f, 50.001f);
-                    rooms[i].setUserData("row", row);
-                    rooms[i].setUserData("col", col);
-                    rooms[i].setUserData("topNeighbor", true);
-                    if (i > 0)
+                    // If the coordinates are not already taken - continue
+                    if (!checkRoomCoordinates(row, col))
                     {
-                        rooms[i - 1].setUserData("bottomNeighbor", true);
+                        rooms[i].setLocalTranslation(-70.001f, 0f, 0f);
+                        rooms[i].setUserData("row", row);
+                        rooms[i].setUserData("col", col);
+                        rooms[i].setUserData("rightNeighbor", true);
+                        if (i > 0)
+                        {
+                            rooms[i - 1].setUserData("leftNeighbor", true);
+                        } else
+                        {
+                            rootNode.setUserData("leftNeighbor", true);
+                        }
                     } else
                     {
-                        rootNode.setUserData("bottomNeighbor", true);
+                        lastRoll = 0;
+                        col += 1;
+                        i--;
+                        continue;
                     }
+                }
+                if (nextRoom == 1)
+                {
+                    row -= 1;
+
+                    if (!checkRoomCoordinates(row, col))
+                    {
+                        rooms[i].setLocalTranslation(0f, 0f, -50.001f);
+                        rooms[i].setUserData("row", row);
+                        rooms[i].setUserData("col", col);
+                        rooms[i].setUserData("bottomNeighbor", true);
+                        if (i > 0)
+                        {
+                            rooms[i - 1].setUserData("topNeighbor", true);
+                        } else
+                        {
+                            rootNode.setUserData("topNeighbor", true);
+                        }
+
+                    } else
+                    {
+                        lastRoll = 1;
+                        row += 1;
+                        i--;
+                        continue;
+                    }
+                }
+                if (nextRoom == 2)
+                {
+                    col += 1;
+
+                    if (!checkRoomCoordinates(row, col))
+                    {
+                        rooms[i].setLocalTranslation(70.001f, 0f, 0f);
+                        rooms[i].setUserData("row", row);
+                        rooms[i].setUserData("col", col);
+                        rooms[i].setUserData("leftNeighbor", true);
+                        if (i > 0)
+                        {
+                            rooms[i - 1].setUserData("rightNeighbor", true);
+                        } else
+                        {
+                            rootNode.setUserData("rightNeighbor", true);
+                        }
+                    } else
+                    {
+                        lastRoll = 2;
+                        col -= 1;
+                        i--;
+                        continue;
+                    }
+                }
+                if (nextRoom == 3)
+                {
+                    row += 1;
+
+                    if (!checkRoomCoordinates(row, col))
+                    {
+                        rooms[i].setLocalTranslation(0f, 0f, 50.001f);
+                        rooms[i].setUserData("row", row);
+                        rooms[i].setUserData("col", col);
+                        rooms[i].setUserData("topNeighbor", true);
+                        if (i > 0)
+                        {
+                            rooms[i - 1].setUserData("bottomNeighbor", true);
+                        } else
+                        {
+                            rootNode.setUserData("bottomNeighbor", true);
+                        }
+                    } else
+                    {
+                        lastRoll = 3;
+                        row -= 1;
+                        i--;
+                        continue;
+                    }
+                }
+
+                // Must attach the child room to the rootNode during the first iteration
+                if (i == 0)
+                {
+                    rootNode.attachChild(rooms[i]);
                 } else
                 {
-                    lastRoll = 3;
-                    row -= 1;
-                    i--;
-                    continue;
+                    rooms[i - 1].attachChild(rooms[i]);
                 }
-            }
 
-            // Must attach the child room to the rootNode during the first iteration
-            if (i == 0)
-            {
-                rootNode.attachChild(rooms[i]);
-            }
-            else
-            {
-                rooms[i - 1].attachChild(rooms[i]);
-            }
+                makeGround(rooms[i], 0);
+                makeWalls(rooms[i]);
+                makeDoors();
 
-            makeGround(rooms[i], 0);
-            makeWalls(rooms[i]);
-            makeDoors();
-
-            // Reset loop efficiency variables
-            lastRoll = -1;
-            breakCounter = 0;
+                // Reset loop efficiency variables
+                lastRoll = -1;
+                breakCounter = 0;
+            }
         }
     }
 
@@ -1015,14 +1060,14 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
             leftWall[i].addControl(wallCollision[wallCollisionIndex]);
             leftWall[i].getControl(RigidBodyControl.class).setKinematic(true);
             bulletAppState.getPhysicsSpace().add(wallCollision[wallCollisionIndex]);
-            
+
             wallCollisionIndex++;
 
             wallCollision[wallCollisionIndex] = new RigidBodyControl(0.0f);
             rightWall[i].addControl(wallCollision[wallCollisionIndex]);
             rightWall[i].getControl(RigidBodyControl.class).setKinematic(true);
             bulletAppState.getPhysicsSpace().add(wallCollision[wallCollisionIndex]);
-            
+
             wallCollisionIndex++;
         }
 
@@ -1236,15 +1281,15 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         environmentItem.setLocalTranslation((float) xLocation, 2f, (float) zLocation);
         Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         //mat.setColor("Color", ColorRGBA.Brown);
-        
+
         environmentItem.setMaterial((Material) assetManager.loadMaterial("Materials/Rock_1.j3m"));
-        
-         environmentCollision[environmentCollisionIndex] = new RigidBodyControl(0.0f);
-         environmentItem.addControl(environmentCollision[environmentCollisionIndex]);
-         environmentItem.getControl(RigidBodyControl.class).setKinematic(true);
-         bulletAppState.getPhysicsSpace().add(environmentCollision[environmentCollisionIndex]);
-      
-         environmentCollisionIndex++;
+
+        environmentCollision[environmentCollisionIndex] = new RigidBodyControl(0.0f);
+        environmentItem.addControl(environmentCollision[environmentCollisionIndex]);
+        environmentItem.getControl(RigidBodyControl.class).setKinematic(true);
+        bulletAppState.getPhysicsSpace().add(environmentCollision[environmentCollisionIndex]);
+
+        environmentCollisionIndex++;
 
         room.attachChild(environmentItem);
     }
@@ -1307,7 +1352,14 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         camera.setCameraNode((CameraNode) camNode);
         room.attachChild(camera.getCameraNode());
         camera.getCameraNode().setLocalTranslation(new Vector3f(x, y, z));
-        camNode.lookAt(sage.getNode().getLocalTranslation(), Vector3f.UNIT_Y); // Change room to rootNode as needed for testing
+        if (bosstest == true)
+        {
+            camNode.lookAt(rootNode.getLocalTranslation(), Vector3f.UNIT_Y); // Change room to rootNode as needed for testing
+        } else
+        {
+            camNode.lookAt(sage.getNode().getLocalTranslation(), Vector3f.UNIT_Y); // Change room to rootNode as needed for testing
+
+        }
     }
 
     // Initializes ambient light and creates a light to make the rooms brighter
@@ -1341,15 +1393,15 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
     protected int getWisdomRandom(int max)
     {
         int wisdom = randomGenerator.nextInt(max);
-        
-        if(wisdomUnlock[wisdom])
+
+        if (wisdomUnlock[wisdom])
         {
             getWisdomRandom(max);
         }
-        
+
         return wisdom;
     }
-    
+
     // Returns a random number between two values
     protected int getNumRooms(int min, int max)
     {
@@ -1371,15 +1423,14 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
             if (row == nextRow && col == nextCol)
             {
                 return true;
-            } 
-            else if (nextRow == rootRow && nextCol == rootCol)
+            } else if (nextRow == rootRow && nextCol == rootCol)
             {
                 return true;
             }
         }
         return false;
     }
-   
+
     // Renders only the rooms closest to the player - needs work
     protected void renderNearestRooms()
     {
@@ -1545,7 +1596,6 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
       
      results.clear();
      */
-    
     private void initSounds()
     {
         // Running sound does not play when you reset the game
@@ -1554,43 +1604,43 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         runningSound.setLooping(false);
         runningSound.setVolume(2);
         rootNode.attachChild(runningSound);
-        
+
         healingSound = new AudioNode(assetManager, "Sounds/HealSound.wav", false);
         healingSound.setPositional(false);
         healingSound.setLooping(false);
         healingSound.setVolume(2000);
         rootNode.attachChild(healingSound);
-        
+
         startGameSound = new AudioNode(assetManager, "Sounds/DoorOpening.wav", false);
         startGameSound.setPositional(false);
         startGameSound.setLooping(false);
         startGameSound.setVolume(2000);
         rootNode.attachChild(startGameSound);
-        
+
         endGameSound = new AudioNode(assetManager, "Sounds/DoorClosing.wav", false);
         endGameSound.setPositional(false);
         endGameSound.setLooping(false);
         endGameSound.setVolume(2);
         rootNode.attachChild(endGameSound);
-        
+
         useItemSound = new AudioNode(assetManager, "Sounds/Pickup.wav", false);
         useItemSound.setPositional(false);
         useItemSound.setLooping(false);
         useItemSound.setVolume(2);
         rootNode.attachChild(useItemSound);
-        
+
         windSound = new AudioNode(assetManager, "Sounds/Wind.wav", false);
         windSound.setPositional(false);
         windSound.setLooping(false);
         windSound.setVolume(2);
         rootNode.attachChild(windSound);
     }
-    
+
     // Initializes key bindings - we will use booleans to create game states
     private void initKeys()
     {
         inputManager.addMapping("StartGame", new KeyTrigger(KeyInput.KEY_SPACE));
-        
+
         inputManager.addMapping("Zoom", new KeyTrigger(KeyInput.KEY_Z));
         inputManager.addMapping("CameraLeft", new KeyTrigger(KeyInput.KEY_LEFT));
         inputManager.addMapping("CameraUp", new KeyTrigger(KeyInput.KEY_UP));
@@ -1602,13 +1652,13 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         inputManager.addMapping("PlayerUp", new KeyTrigger(KeyInput.KEY_W));
         inputManager.addMapping("PlayerRight", new KeyTrigger(KeyInput.KEY_D));
         inputManager.addMapping("PlayerDown", new KeyTrigger(KeyInput.KEY_S));
-        
+
         inputManager.addMapping("IncreaseSpeed", new KeyTrigger(KeyInput.KEY_0));
         inputManager.addMapping("DecreaseSpeed", new KeyTrigger(KeyInput.KEY_9));
-        
+
         inputManager.addMapping("IncreaseHealth", new KeyTrigger(KeyInput.KEY_8));
         inputManager.addMapping("DecreaseHealth", new KeyTrigger(KeyInput.KEY_7));
-        
+
         inputManager.addMapping("UsePotion", new KeyTrigger(KeyInput.KEY_B));
         inputManager.addMapping("UsePowerUp", new KeyTrigger(KeyInput.KEY_N));
         inputManager.addMapping("UseDefenseUp", new KeyTrigger(KeyInput.KEY_M));
@@ -1616,7 +1666,7 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         inputManager.addMapping("OpenMerchant", new KeyTrigger(KeyInput.KEY_L));
 
         inputManager.addMapping("PlayerAttack", new KeyTrigger(KeyInput.KEY_RCONTROL));
-        
+
         inputManager.addMapping("IgnoreCollision", new KeyTrigger(KeyInput.KEY_LCONTROL));
 
         inputManager.addListener(actionListener, "Zoom", "CameraReset", "IgnoreCollision", "StartGame", "UsePotion", "PlayerLeft", "PlayerUp", "PlayerRight", "PlayerDown", "OpenMenu", "UsePowerUp", "UseDefenseUp", "OpenMerchant", "PlayerAttack");
@@ -1627,7 +1677,7 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
     {
         public void onAction(String name, boolean keyPressed, float tpf)
         {
-            if(!gameOver)
+            if (!gameOver)
             {
                 if (name.equals("Zoom") && !keyPressed)
                 {
@@ -1635,8 +1685,7 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
                     {
                         camera.setY(750);
                         camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
-                    } 
-                    else
+                    } else
                     {
                         camera.setY(65);
                         camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
@@ -1648,7 +1697,7 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
                     camera.setZ(35);
                     camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
                 }
-                if(atTitleScreen)
+                if (atTitleScreen)
                 {
                     // when at the title screen and space is pressed, start the game
                     if (name.equals("StartGame") && !keyPressed)
@@ -1658,24 +1707,22 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
                         atTitleScreen = false;
                     }
                 }
-                if(merchantOpen)
+                if (merchantOpen)
                 {
-                    if(name.equals("StartGame") && !keyPressed)
+                    if (name.equals("StartGame") && !keyPressed)
                     {
-                        if(textIndex < 5 && !metMerchant)
+                        if (textIndex < 5 && !metMerchant)
                         {
                             textIndex++;
-                        }
-                        else if(!metMerchant)
+                        } else if (!metMerchant)
                         {
                             metMerchant = true;
-                        }
-                        else if(gaveMerchant)
+                        } else if (gaveMerchant)
                         {
                             gaveMerchant = false;
                         }
                     }
-                    if(name.equals("UsePowerUp") && !keyPressed && sage.getNumPowerUp() > 0 && metMerchant)
+                    if (name.equals("UsePowerUp") && !keyPressed && sage.getNumPowerUp() > 0 && metMerchant)
                     {
                         sage.setNumPowerUp(-1);
                         sage.setPotions(2);
@@ -1683,7 +1730,7 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
                         gaveMerchant = true;
                         initSounds();
                     }
-                    if(name.equals("UseDefenseUp") && !keyPressed && sage.getNumDefenseUp() > 0 && metMerchant)
+                    if (name.equals("UseDefenseUp") && !keyPressed && sage.getNumDefenseUp() > 0 && metMerchant)
                     {
                         sage.setNumDefenseUp(-1);
                         sage.setPotions(2);
@@ -1719,29 +1766,29 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
                 if (name.equals("PlayerLeft"))
                 {
                     sage.setMoveLeft(keyPressed);
-                    if(!animationChannel.getAnimationName().equals("Walk"))
+                    if (!animationChannel.getAnimationName().equals("Walk"))
                     {
                         animationChannel.setAnim("Walk", 0.50f);
                         animationChannel.setLoopMode(LoopMode.Loop);
                         animationChannel.setSpeed(1.5f);
                     }
-                    if(!keyPressed) // On key release...do this
+                    if (!keyPressed) // On key release...do this
                     {
                         animationChannel.setAnim("stand", 0.50f);
                         animationChannel.setLoopMode(LoopMode.DontLoop);
                     }
-                    
+
                 }
                 if (name.equals("PlayerUp"))
                 {
                     sage.setMoveUp(keyPressed);
-                    if(!animationChannel.getAnimationName().equals("Walk"))
+                    if (!animationChannel.getAnimationName().equals("Walk"))
                     {
                         animationChannel.setAnim("Walk", 0.50f);
                         animationChannel.setLoopMode(LoopMode.Loop);
                         animationChannel.setSpeed(1.5f);
                     }
-                    if(!keyPressed) // On key release...do this
+                    if (!keyPressed) // On key release...do this
                     {
                         animationChannel.setAnim("stand", 0.50f);
                         animationChannel.setLoopMode(LoopMode.DontLoop);
@@ -1750,13 +1797,13 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
                 if (name.equals("PlayerRight"))
                 {
                     sage.setMoveRight(keyPressed);
-                    if(!animationChannel.getAnimationName().equals("Walk"))
+                    if (!animationChannel.getAnimationName().equals("Walk"))
                     {
                         animationChannel.setAnim("Walk", 0.50f);
                         animationChannel.setLoopMode(LoopMode.Loop);
                         animationChannel.setSpeed(1.5f);
                     }
-                    if(!keyPressed) // On key release...do this
+                    if (!keyPressed) // On key release...do this
                     {
                         animationChannel.setAnim("stand", 0.50f);
                         animationChannel.setLoopMode(LoopMode.DontLoop);
@@ -1765,13 +1812,13 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
                 if (name.equals("PlayerDown"))
                 {
                     sage.setMoveDown(keyPressed);
-                    if(!animationChannel.getAnimationName().equals("Walk"))
+                    if (!animationChannel.getAnimationName().equals("Walk"))
                     {
                         animationChannel.setAnim("Walk", 0.50f);
                         animationChannel.setLoopMode(LoopMode.Loop);
                         animationChannel.setSpeed(1.5f);
                     }
-                    if(!keyPressed) // On key release...do this
+                    if (!keyPressed) // On key release...do this
                     {
                         animationChannel.setAnim("stand", 0.50f);
                         animationChannel.setLoopMode(LoopMode.DontLoop);
@@ -1779,37 +1826,34 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
                 }
                 if (name.equals("OpenMenu") && !keyPressed)
                 {
-                    if(wisdomOpen)
+                    if (wisdomOpen)
                     {
                         sage.setFoundWisdom(false);
                         wisdomOpen = false;
                         wisdomUnlock[wisdomNumber] = true;
                         wisdomNumber = -1;
-                        
+
                     }
-                    if(sage.getFoundWisdom())
+                    if (sage.getFoundWisdom())
                     {
                         wisdomOpen = true;
-                    }
-                    else if(!menuOpen)
+                    } else if (!menuOpen)
                     {
                         menuOpen = true;
-                    }
-                    else
+                    } else
                     {
                         menuOpen = false;
                         merchantOpen = false;
                     }
                 }
-                if(name.equals("OpenMerchant") && !keyPressed)
+                if (name.equals("OpenMerchant") && !keyPressed)
                 {
-                    if(menuOpen)
+                    if (menuOpen)
                     {
-                        if(merchantOpen)
+                        if (merchantOpen)
                         {
                             merchantOpen = false;
-                        }
-                        else
+                        } else
                         {
                             merchantOpen = true;
                             windSound.playInstance();
@@ -1817,12 +1861,11 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
                         }
                     }
                 }
-                if(name.equals("PlayerAttack") && !keyPressed)
+                if (name.equals("PlayerAttack") && !keyPressed)
                 {
                     playerAttack();
                 }
-            }
-            else if(gameOver) // yes, it is redundant - just for readability
+            } else if (gameOver) // yes, it is redundant - just for readability
             {
                 if (name.equals("StartGame") && !keyPressed)
                 {
@@ -1833,7 +1876,7 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
                     gameOver = false;
                 }
             }
-            
+
         }
     };
     // Analog listener is for consistent actions that should be able to repeat constantly
@@ -1841,7 +1884,7 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
     {
         public void onAnalog(String name, float value, float tpf)
         {
-            if(!gameOver)
+            if (!gameOver)
             {
                 if (name.equals("CameraLeft"))
                 {
@@ -1866,107 +1909,128 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
                 if (name.equals("PlayerLeft") && sage.getAllowLeft())
                 {
                     sage.setFacing("left");
-                    
+
                     sage.setX(-sage.getSpeed());
-                
+
                     // Setting the character facing rotation angle
-                    rotation.fromAngleAxis(FastMath.PI * 3 / 2, new Vector3f(0,1,0));
+                    rotation.fromAngleAxis(FastMath.PI * 3 / 2, new Vector3f(0, 1, 0));
                     sage.getNode().getChild("Player").setLocalRotation(rotation);
-                
+
                     //playerControl.warp(new Vector3f(sage.getX(), sage.getY(), sage.getZ()));
                     //playerControl.setWalkDirection(new Vector3f(-sage.getSpeed() * 3,0,0));
-                    
+
                     //sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
-                                        
+
                     //camera.setX(-sage.getSpeed() / 8);
-                    camera.setLocation(sage.getNode().getLocalTranslation().x, camera.getY(), sage.getNode().getLocalTranslation().z);
-                    
+                    if (bosstest == false)
+                    {
+                        camera.setLocation(sage.getNode().getLocalTranslation().x, camera.getY(), sage.getNode().getLocalTranslation().z);
+                    } else
+                    {
+                        enemyCollision[bossCollisionIndex].setViewDirection(sage.getNode().getLocalTranslation());
+                    }
+
                     runningSound.play();
                 }
                 if (name.equals("PlayerUp") && sage.getAllowUp())
                 {
                     sage.setFacing("up");
-                    
+
                     sage.setZ(-sage.getSpeed());
-                
+
                     // Setting the character facing rotation angle
-                    rotation.fromAngleAxis(FastMath.PI, new Vector3f(0,1,0));
+                    rotation.fromAngleAxis(FastMath.PI, new Vector3f(0, 1, 0));
                     sage.getNode().getChild("Player").setLocalRotation(rotation);
-                
+
                     //playerControl.warp(new Vector3f(sage.getX(), sage.getY(), sage.getZ()));
                     //playerControl.setWalkDirection(new Vector3f(0,0,-sage.getSpeed() * 3));
-                            
+
                     //sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
-                
+
                     //camera.setZ(-sage.getSpeed() / 8);
-                    camera.setLocation(sage.getNode().getLocalTranslation().x, camera.getY(), sage.getNode().getLocalTranslation().z);
-                    
+                    if (bosstest == false)
+                    {
+                        camera.setLocation(sage.getNode().getLocalTranslation().x, camera.getY(), sage.getNode().getLocalTranslation().z);
+                    } else
+                    {
+                        enemyCollision[bossCollisionIndex].setViewDirection(sage.getNode().getLocalTranslation());
+                    }
                     runningSound.play();
                 }
                 if (name.equals("PlayerRight") && sage.getAllowRight())
                 {
                     sage.setFacing("right");
-                    
+
                     sage.setX(sage.getSpeed());
-                
+
                     // Setting the character facing rotation angle
-                    rotation.fromAngleAxis(FastMath.PI/2, new Vector3f(0,1,0));
+                    rotation.fromAngleAxis(FastMath.PI / 2, new Vector3f(0, 1, 0));
                     sage.getNode().getChild("Player").setLocalRotation(rotation);
-                    
+
                     //playerControl.warp(new Vector3f(sage.getX(), sage.getY(), sage.getZ()));
                     //playerControl.setWalkDirection(new Vector3f(sage.getSpeed() * 3,0,0));
                     //sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
-                
+
                     //camera.setX(sage.getSpeed() / 8);
-                    camera.setLocation(sage.getNode().getLocalTranslation().x, camera.getY(), sage.getNode().getLocalTranslation().z);
-                    
+                    if (bosstest == false)
+                    {
+                        camera.setLocation(sage.getNode().getLocalTranslation().x, camera.getY(), sage.getNode().getLocalTranslation().z);
+                    } else
+                    {
+                        enemyCollision[bossCollisionIndex].setViewDirection(sage.getNode().getLocalTranslation());
+                    }
                     runningSound.play();
                 }
                 if (name.equals("PlayerDown") && sage.getAllowDown())
                 {
                     sage.setFacing("down");
-                    
+
                     sage.setZ(sage.getSpeed());
-                
+
                     //sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
-                
+
                     // Setting the character facing rotation angle
-                    rotation.fromAngleAxis(FastMath.PI * 2, new Vector3f(0,1,0));
+                    rotation.fromAngleAxis(FastMath.PI * 2, new Vector3f(0, 1, 0));
                     sage.getNode().getChild("Player").setLocalRotation(rotation);
-                
+
                     //playerControl.warp(new Vector3f(sage.getX(), sage.getY(), sage.getZ()));
                     //playerControl.setWalkDirection(new Vector3f(0,0,sage.getSpeed() * 3));
-                     //sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
-                
+                    //sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
+
                     //camera.setZ(sage.getSpeed() / 8);
-                    camera.setLocation(sage.getNode().getLocalTranslation().x, camera.getY(), sage.getNode().getLocalTranslation().z);
-                    
+                    if (bosstest == false)
+                    {
+                        camera.setLocation(sage.getNode().getLocalTranslation().x, camera.getY(), sage.getNode().getLocalTranslation().z);
+                    } else
+                    {
+                        enemyCollision[bossCollisionIndex].setViewDirection(sage.getNode().getLocalTranslation());
+                    }
                     runningSound.play();
                 }
                 if (name.equals("IncreaseSpeed"))
                 {
-                    if(sage.getSpeed() < 1f)
+                    if (sage.getSpeed() < 1f)
                     {
                         sage.setSpeed(.1f);
                     }
                 }
                 if (name.equals("DecreaseSpeed"))
                 {
-                    if(sage.getSpeed() > .1f)
+                    if (sage.getSpeed() > .1f)
                     {
                         sage.setSpeed(-.1f);
                     }
                 }
                 if (name.equals("IncreaseHealth"))
                 {
-                    if(sage.getHealth() < 100f)
+                    if (sage.getHealth() < 100f)
                     {
                         sage.setHealth(1f);
                     }
                 }
                 if (name.equals("DecreaseHealth"))
                 {
-                    if(sage.getHealth() > 0f)
+                    if (sage.getHealth() > 0f)
                     {
                         sage.setHealth(-1f);
                     }
@@ -1974,62 +2038,59 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
             }
         }
     };
-    
+
     protected float getScreenWidth()
     {
         return this.settings.getWidth();
     }
-    
+
     protected float getScreenHeight()
     {
         return this.settings.getHeight();
     }
-    
+
     public void onAnimChange(AnimControl control, AnimChannel channel, String animName)
     {
-        
     }
-    
+
     public void onAnimCycleDone(AnimControl control, AnimChannel channel, String animName)
     {
-        
     }
-    
+
     @Override
-     public void simpleUpdate(float tpf) 
-     {
-         if(!gameOver && !atTitleScreen)
-         {
+    public void simpleUpdate(float tpf)
+    {
+        if (!gameOver && !atTitleScreen)
+        {
             updateHUD();
             updateCharacterStatus();
             updateEnemyStatus();
-            if(sage.getHitEnemy())
+            if (sage.getHitEnemy())
             {
                 sage.setHitEnemy(false);
             }
-            if(wisdomOpen)
+            if (wisdomOpen)
             {
                 displayWisdom();
             }
-            if(menuOpen)
+            if (menuOpen)
             {
-                if(merchantOpen)
+                if (merchantOpen)
                 {
                     displayMerchant();
-                }
-                else
+                } else
                 {
                     displayMenu();
                 }
             }
-         }
-         if(gameOver)
-         {
-             displayGameOver();
-         }
-         if(atTitleScreen)
-         {
-             displayTitleScreen();
-         }
-     }
+        }
+        if (gameOver)
+        {
+            displayGameOver();
+        }
+        if (atTitleScreen)
+        {
+            displayTitleScreen();
+        }
+    }
 }
