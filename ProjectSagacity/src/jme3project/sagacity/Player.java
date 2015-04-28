@@ -291,14 +291,8 @@ public class Player implements PhysicsCollisionListener
                 boolean isEnergy = event.getNodeA().getUserData("energy");
                 if (enemyHealth > 0)
                 {
-                    event.getNodeB().setUserData("health", enemyHealth - 40);
-                } else
-                {
-                    event.getNodeB().removeFromParent();
-                    event.getNodeB().removeControl(event.getNodeB().getControl(0));
-
-                    //event.getNodeB().setLocalTranslation(new Vector3f(0f, -1000f, 0f));
-                }
+                    event.getNodeB().setUserData("health", enemyHealth - 100);
+                } 
                 if (isEnergy)
                 {
                     event.getNodeA().removeFromParent();
@@ -312,14 +306,8 @@ public class Player implements PhysicsCollisionListener
                 boolean isEnergy = event.getNodeB().getUserData("energy");
                 if (enemyHealth > 0)
                 {
-                    event.getNodeA().setUserData("health", enemyHealth - 40);
-                } else
-                {
-                    event.getNodeA().removeFromParent();
-                    event.getNodeA().removeControl(event.getNodeA().getControl(0));
-
-                    //event.getNodeA().setLocalTranslation(new Vector3f(0f, -1000f, 0f));
-                }
+                    event.getNodeA().setUserData("health", enemyHealth - 100);
+                } 
                 if (isEnergy)
                 {
                     event.getNodeB().removeFromParent();
@@ -345,7 +333,7 @@ public class Player implements PhysicsCollisionListener
                     event.getNodeA().removeControl(event.getNodeA().getControl(0));
                 }
             }
-            if (event.getNodeB().getName().equals("Attack") && event.getNodeA().getName().contains("Bullet"))
+            if (event.getNodeB().getName().equals("Attack") && event.getNodeA().getName().equals("Bullet"))
             {
                 boolean isEnergy = event.getNodeB().getUserData("energy");
                 if (isEnergy)
@@ -355,7 +343,7 @@ public class Player implements PhysicsCollisionListener
                 }
             }
 
-            if (event.getNodeA().getName().equals("Attack") && event.getNodeB().getName().contains("Bullet"))
+            if (event.getNodeA().getName().equals("Attack") && event.getNodeB().getName().equals("Bullet"))
             {
                 boolean isEnergy = event.getNodeA().getUserData("energy");
                 if (isEnergy)
@@ -363,6 +351,25 @@ public class Player implements PhysicsCollisionListener
                     event.getNodeA().removeFromParent();
                     event.getNodeA().removeControl(event.getNodeA().getControl(0));
                 }
+            }
+            
+            if (event.getNodeB().getName().equals("Bullet") && event.getNodeA().getName().equals("Bullet"))
+            {
+                event.getNodeA().removeFromParent();
+                event.getNodeA().removeControl(event.getNodeA().getControl(0));
+                event.getNodeB().removeFromParent();
+                event.getNodeB().removeControl(event.getNodeB().getControl(0));
+            }
+            
+            if (event.getNodeB().getName().equals("Attack") && event.getNodeA().getName().equals("Floor"))
+            {
+                event.getNodeB().removeFromParent();
+                event.getNodeB().removeControl(event.getNodeB().getControl(0));
+            }
+            if (event.getNodeA().getName().equals("Attack") && event.getNodeB().getName().equals("Floor"))
+            {
+                event.getNodeA().removeFromParent();
+                event.getNodeA().removeControl(event.getNodeA().getControl(0));
             }
 
         } catch (Exception e)

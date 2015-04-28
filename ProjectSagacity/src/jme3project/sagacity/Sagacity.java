@@ -571,7 +571,7 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
             room.attachChild(boss);
 
             boss.setName("Boss");
-            boss.setUserData("health", 5000);
+            boss.setUserData("health", 1000);
 
 
             boss.setLocalTranslation((float) xLocation, 2f, (float) zLocation);
@@ -2384,7 +2384,7 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
 
         private void bossAttack()
         {
-            if (shottimer == 50 && bossdead == false)
+            if (shottimer == 150 && bossdead == false)
             {
                 int bossHealth = rootNode.getChild("Boss").getUserData("health");
                 if (bossHealth > 0)
@@ -2395,6 +2395,7 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
                 {
                     bossdead = true;
                     rootNode.getChild("Boss").removeControl(rootNode.getChild("Boss").getControl(0));
+                    rootNode.detachChildNamed("Boss");
                     bosstest = false;
                     gameOver = true;
                 }
