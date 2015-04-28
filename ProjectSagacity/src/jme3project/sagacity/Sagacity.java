@@ -36,8 +36,6 @@ import com.jme3.scene.shape.Sphere;
 import com.jme3.texture.Texture;
 import com.jme3.util.TangentBinormalGenerator;
 import java.util.Random;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class Sagacity extends SimpleApplication implements AnimEventListener
 {
@@ -66,7 +64,6 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
     private int enemyMovementIndex = 0;
     private int textIndex = 0;
     private int enemyChance = 40;
-    private int shottimer = 0;
     private float blockWidth = 5;
     private float blockHeight = 5;
     private BulletAppState bulletAppState = new BulletAppState();
@@ -86,7 +83,6 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
     private boolean metMerchant = false;
     private boolean gaveMerchant = false;
     private boolean wisdomOpen = false;
-    private boolean bossTest = false;
     private boolean unlockEnemies = false;
     private int wisdomNumber = -1;
     private boolean[] wisdomUnlock =
@@ -111,7 +107,6 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
     private boolean bosstest = true;
     private int tempEnemyHealth = 50;
     private boolean bossdead = false;
-    
 
     // -------------------------- //
     public static void main(String[] args)
@@ -159,7 +154,6 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         {
             bossfight();
         }
-<<<<<<< HEAD
     }
 
     private void bossfight()
@@ -170,17 +164,6 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         makeCharacterController();
         makeEnemies();
         setupCamera(rootNode, 0, 750, 20);
-=======
-        makePowerUp();
-        makeDefenseUp();
-        
-        makeEnvironment();
-        if(unlockEnemies)
-        {
-            makeEnemies();
-        }
-        setupCamera(rootNode, 0, 750, 35);
->>>>>>> 5601ef848e070b3e69467aed26eff3dc9cdef50b
         camera.setY(65);
         camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
         initLight();
@@ -634,37 +617,33 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
 
         randomEnemyCollisionIndex++;
     }
-<<<<<<< HEAD
 
-=======
-    
     protected void makeBoss(Node room, double xLocation, double zLocation, String model, String texture)
     {
         Spatial boss = assetManager.loadModel("Models/" + model);
-        
+
         room.attachChild(boss);
-        
+
         boss.setName("Boss");
         boss.setUserData("health", 5000);
-        
+
         boss.setLocalTranslation((float) xLocation, 2f, (float) zLocation);
         Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-        
+
         boss.setMaterial((Material) assetManager.loadMaterial("Materials/Rock_1.j3m"));
         mat.setColor("Color", ColorRGBA.Brown);
         boss.setMaterial(mat);
         boss.scale(4);
-        
+
         bossCollision = new BetterCharacterControl(2, 24, 4000);
-        
+
         bossCollision.setViewDirection(sage.getNode().getLocalTranslation());
-        
+
         boss.addControl(bossCollision);
         bulletAppState.getPhysicsSpace().add(bossCollision);
     }
-    
->>>>>>> 5601ef848e070b3e69467aed26eff3dc9cdef50b
     // Called once to make all of the enemies for the entire floor
+
     protected void makeEnemies()
     {
         double xLocation;
@@ -843,30 +822,7 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
 
         sage.getNode().attachChild(attackNode);
     }
-<<<<<<< HEAD
 
-=======
-    
-    protected void bossAttack()
-    {
-        if(shottimer == 500)
-        {
-            int bossHealth = rootNode.getChild("Boss").getUserData("health");
-            if (bossHealth > 0)
-            {
-                shottimer = 0;
-                makeBoss(rootNode, 0, 0, "EnemyBossHead/EnemyBossHead.j3o", "RockTexture.jpg");
-            }
-            else
-            {
-                rootNode.getChild("Boss").removeControl(rootNode.getChild("Boss").getControl(0));
-                rootNode.getChild("Boss").removeFromParent();
-            }
-        }
-        shottimer++;
-    }
-    
->>>>>>> 5601ef848e070b3e69467aed26eff3dc9cdef50b
     protected void updateHUD()
     {
         guiNode.detachAllChildren();
@@ -1942,17 +1898,13 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
 
         inputManager.addMapping("PlayerAttack", new KeyTrigger(KeyInput.KEY_RCONTROL));
         inputManager.addMapping("RockAttack", new KeyTrigger(KeyInput.KEY_RSHIFT));
-<<<<<<< HEAD
 
         inputManager.addMapping("IgnoreCollision", new KeyTrigger(KeyInput.KEY_LCONTROL));
-=======
-        
-        inputManager.addMapping("UnlockEnemies", new KeyTrigger(KeyInput.KEY_LCONTROL));
->>>>>>> 5601ef848e070b3e69467aed26eff3dc9cdef50b
 
-        inputManager.addListener(actionListener, "UnlockEnemies", "Zoom", "CameraReset", "StartGame", "UsePotion", "PlayerLeft", "PlayerUp", "PlayerRight", "PlayerDown", "OpenMenu", "UsePowerUp", "UseDefenseUp", "OpenMerchant", "PlayerAttack", "RockAttack");
-        inputManager.addListener(analogListener, "CameraLeft", "CameraUp", "CameraRight", "CameraDown", "PlayerLeft", "PlayerUp", "PlayerRight", "PlayerDown", "IncreaseSpeed", "DecreaseSpeed", "IncreaseHealth", "DecreaseHealth", "IncreaseEnemies", "DecreaseEnemies");
-    }
+        inputManager.addMapping("UnlockEnemies", new KeyTrigger(KeyInput.KEY_LCONTROL));
+        inputManager.addListener(actionListener, "Zoom", "CameraReset", "IgnoreCollision", "StartGame", "UsePotion", "PlayerLeft", "PlayerUp", "PlayerRight", "PlayerDown", "OpenMenu", "UsePowerUp", "UseDefenseUp", "OpenMerchant", "PlayerAttack");
+        inputManager.addListener(analogListener, "CameraLeft", "CameraUp", "CameraRight", "CameraDown", "PlayerLeft", "PlayerUp", "PlayerRight", "PlayerDown", "IncreaseSpeed", "DecreaseSpeed", "IncreaseHealth", "DecreaseHealth");    }
+    
     // Action listener is for actions that should only happen once in a given moment
     private ActionListener actionListener = new ActionListener()
     {
@@ -2150,16 +2102,13 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
                 {
                     rockAttack();
                 }
-<<<<<<< HEAD
             } else if (gameOver) // yes, it is redundant - just for readability
-=======
-                if(name.equals("UnlockEnemies") && !keyPressed)
+            {
+                if (name.equals("UnlockEnemies") && !keyPressed)
                 {
                     unlockEnemies = true;
                 }
-            }
-            else if(gameOver) // yes, it is redundant - just for readability
->>>>>>> 5601ef848e070b3e69467aed26eff3dc9cdef50b
+            } else if (gameOver) // yes, it is redundant - just for readability
             {
                 if (name.equals("StartGame") && !keyPressed)
                 {
@@ -2170,270 +2119,257 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
                     gameOver = false;
                 }
             }
-
         }
-    };
-    // Analog listener is for consistent actions that should be able to repeat constantly
-    private AnalogListener analogListener = new AnalogListener()
-    {
-        public void onAnalog(String name, float value, float tpf)
+        // Analog listener is for consistent actions that should be able to repeat constantly
+        private AnalogListener analogListener = new AnalogListener()
         {
-            if (!gameOver)
+            public void onAnalog(String name, float value, float tpf)
             {
-                if (name.equals("CameraLeft"))
+                if (!gameOver)
                 {
-                    camera.setX(-5f);
-                    camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
-                }
-                if (name.equals("CameraUp"))
-                {
-                    camera.setZ(-5f);
-                    camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
-                }
-                if (name.equals("CameraRight"))
-                {
-                    camera.setX(5f);
-                    camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
-                }
-                if (name.equals("CameraDown"))
-                {
-                    camera.setZ(5f);
-                    camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
-                }
-                if (name.equals("PlayerLeft") && sage.getAllowLeft())
-                {
-                    sage.setFacing("left");
-
-                    sage.setX(-sage.getSpeed());
-
-                    // Setting the character facing rotation angle
-                    rotation.fromAngleAxis(FastMath.PI * 3 / 2, new Vector3f(0, 1, 0));
-                    sage.getNode().getChild("Player").setLocalRotation(rotation);
-
-                    //playerControl.warp(new Vector3f(sage.getX(), sage.getY(), sage.getZ()));
-                    //playerControl.setWalkDirection(new Vector3f(-sage.getSpeed() * 3,0,0));
-
-                    //sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
-
-                    //camera.setX(-sage.getSpeed() / 8);
-                    if (bosstest == false)
+                    if (name.equals("CameraLeft"))
                     {
-                        camera.setLocation(sage.getNode().getLocalTranslation().x, camera.getY(), sage.getNode().getLocalTranslation().z);
-                    } else
-                    {
-                        enemyCollision[bossCollisionIndex].setViewDirection(sage.getNode().getLocalTranslation());
+                        camera.setX(-5f);
+                        camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
                     }
-                    runningSound.play();
-                }
-                if (name.equals("PlayerUp") && sage.getAllowUp())
-                {
-                    sage.setFacing("up");
-
-                    sage.setZ(-sage.getSpeed());
-
-                    // Setting the character facing rotation angle
-                    rotation.fromAngleAxis(FastMath.PI, new Vector3f(0, 1, 0));
-                    sage.getNode().getChild("Player").setLocalRotation(rotation);
-
-                    //playerControl.warp(new Vector3f(sage.getX(), sage.getY(), sage.getZ()));
-                    //playerControl.setWalkDirection(new Vector3f(0,0,-sage.getSpeed() * 3));
-
-                    //sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
-
-                    //camera.setZ(-sage.getSpeed() / 8);
-                    if (bosstest == false)
+                    if (name.equals("CameraUp"))
                     {
-                        camera.setLocation(sage.getNode().getLocalTranslation().x, camera.getY(), sage.getNode().getLocalTranslation().z);
-                    } else
-                    {
-                        enemyCollision[bossCollisionIndex].setViewDirection(sage.getNode().getLocalTranslation());
+                        camera.setZ(-5f);
+                        camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
                     }
-                    runningSound.play();
-                }
-                if (name.equals("PlayerRight") && sage.getAllowRight())
-                {
-                    sage.setFacing("right");
-
-                    sage.setX(sage.getSpeed());
-
-                    // Setting the character facing rotation angle
-                    rotation.fromAngleAxis(FastMath.PI / 2, new Vector3f(0, 1, 0));
-                    sage.getNode().getChild("Player").setLocalRotation(rotation);
-
-                    //playerControl.warp(new Vector3f(sage.getX(), sage.getY(), sage.getZ()));
-                    //playerControl.setWalkDirection(new Vector3f(sage.getSpeed() * 3,0,0));
-                    //sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
-
-                    //camera.setX(sage.getSpeed() / 8);
-                    if (bosstest == false)
+                    if (name.equals("CameraRight"))
                     {
-                        camera.setLocation(sage.getNode().getLocalTranslation().x, camera.getY(), sage.getNode().getLocalTranslation().z);
-                    } else
-                    {
-                        enemyCollision[bossCollisionIndex].setViewDirection(sage.getNode().getLocalTranslation());
+                        camera.setX(5f);
+                        camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
                     }
-                    runningSound.play();
-                }
-                if (name.equals("PlayerDown") && sage.getAllowDown())
-                {
-                    sage.setFacing("down");
+                    if (name.equals("CameraDown"))
+                    {
+                        camera.setZ(5f);
+                        camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
+                    }
+                    if (name.equals("PlayerLeft") && sage.getAllowLeft())
+                    {
+                        sage.setFacing("left");
 
-                    sage.setZ(sage.getSpeed());
+                        sage.setX(-sage.getSpeed());
 
-                    //sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
+                        // Setting the character facing rotation angle
+                        rotation.fromAngleAxis(FastMath.PI * 3 / 2, new Vector3f(0, 1, 0));
+                        sage.getNode().getChild("Player").setLocalRotation(rotation);
 
-                    // Setting the character facing rotation angle
-                    rotation.fromAngleAxis(FastMath.PI * 2, new Vector3f(0, 1, 0));
-                    sage.getNode().getChild("Player").setLocalRotation(rotation);
+                        //playerControl.warp(new Vector3f(sage.getX(), sage.getY(), sage.getZ()));
+                        //playerControl.setWalkDirection(new Vector3f(-sage.getSpeed() * 3,0,0));
 
-                    //playerControl.warp(new Vector3f(sage.getX(), sage.getY(), sage.getZ()));
-                    //playerControl.setWalkDirection(new Vector3f(0,0,sage.getSpeed() * 3));
-                    //sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
+                        //sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
 
-                    //camera.setZ(sage.getSpeed() / 8);
-                    if (bosstest == false)
-                    {
-                        camera.setLocation(sage.getNode().getLocalTranslation().x, camera.getY(), sage.getNode().getLocalTranslation().z);
-                    } else
-                    {
-                        enemyCollision[bossCollisionIndex].setViewDirection(sage.getNode().getLocalTranslation());
+                        //camera.setX(-sage.getSpeed() / 8);
+                        if (bosstest == false)
+                        {
+                            camera.setLocation(sage.getNode().getLocalTranslation().x, camera.getY(), sage.getNode().getLocalTranslation().z);
+                        } else
+                        {
+                            enemyCollision[bossCollisionIndex].setViewDirection(sage.getNode().getLocalTranslation());
+                        }
+                        runningSound.play();
                     }
-                    runningSound.play();
-                }
-                if (name.equals("IncreaseSpeed"))
-                {
-                    if (sage.getSpeed() < 1f)
+                    if (name.equals("PlayerUp") && sage.getAllowUp())
                     {
-                        sage.setSpeed(.1f);
+                        sage.setFacing("up");
+
+                        sage.setZ(-sage.getSpeed());
+
+                        // Setting the character facing rotation angle
+                        rotation.fromAngleAxis(FastMath.PI, new Vector3f(0, 1, 0));
+                        sage.getNode().getChild("Player").setLocalRotation(rotation);
+
+                        //playerControl.warp(new Vector3f(sage.getX(), sage.getY(), sage.getZ()));
+                        //playerControl.setWalkDirection(new Vector3f(0,0,-sage.getSpeed() * 3));
+
+                        //sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
+
+                        //camera.setZ(-sage.getSpeed() / 8);
+                        if (bosstest == false)
+                        {
+                            camera.setLocation(sage.getNode().getLocalTranslation().x, camera.getY(), sage.getNode().getLocalTranslation().z);
+                        } else
+                        {
+                            enemyCollision[bossCollisionIndex].setViewDirection(sage.getNode().getLocalTranslation());
+                        }
+                        runningSound.play();
                     }
-                }
-                if (name.equals("DecreaseSpeed"))
-                {
-                    if (sage.getSpeed() > .1f)
+                    if (name.equals("PlayerRight") && sage.getAllowRight())
                     {
-                        sage.setSpeed(-.1f);
+                        sage.setFacing("right");
+
+                        sage.setX(sage.getSpeed());
+
+                        // Setting the character facing rotation angle
+                        rotation.fromAngleAxis(FastMath.PI / 2, new Vector3f(0, 1, 0));
+                        sage.getNode().getChild("Player").setLocalRotation(rotation);
+
+                        //playerControl.warp(new Vector3f(sage.getX(), sage.getY(), sage.getZ()));
+                        //playerControl.setWalkDirection(new Vector3f(sage.getSpeed() * 3,0,0));
+                        //sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
+
+                        //camera.setX(sage.getSpeed() / 8);
+                        if (bosstest == false)
+                        {
+                            camera.setLocation(sage.getNode().getLocalTranslation().x, camera.getY(), sage.getNode().getLocalTranslation().z);
+                        } else
+                        {
+                            enemyCollision[bossCollisionIndex].setViewDirection(sage.getNode().getLocalTranslation());
+                        }
+                        runningSound.play();
                     }
-                }
-                if (name.equals("IncreaseHealth"))
-                {
-                    if (sage.getHealth() < 100f)
+                    if (name.equals("PlayerDown") && sage.getAllowDown())
                     {
-                        sage.setHealth(1f);
+                        sage.setFacing("down");
+
+                        sage.setZ(sage.getSpeed());
+
+                        //sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
+
+                        // Setting the character facing rotation angle
+                        rotation.fromAngleAxis(FastMath.PI * 2, new Vector3f(0, 1, 0));
+                        sage.getNode().getChild("Player").setLocalRotation(rotation);
+
+                        //playerControl.warp(new Vector3f(sage.getX(), sage.getY(), sage.getZ()));
+                        //playerControl.setWalkDirection(new Vector3f(0,0,sage.getSpeed() * 3));
+                        //sage.getNode().getChild("Player").setLocalTranslation(sage.getX(), sage.getY(), sage.getZ());
+
+                        //camera.setZ(sage.getSpeed() / 8);
+                        if (bosstest == false)
+                        {
+                            camera.setLocation(sage.getNode().getLocalTranslation().x, camera.getY(), sage.getNode().getLocalTranslation().z);
+                        } else
+                        {
+                            enemyCollision[bossCollisionIndex].setViewDirection(sage.getNode().getLocalTranslation());
+                        }
+                        runningSound.play();
                     }
-                }
-                if (name.equals("DecreaseHealth"))
-                {
-                    if (sage.getHealth() > 0f)
+                    if (name.equals("IncreaseSpeed"))
                     {
-                        sage.setHealth(-1f);
+                        if (sage.getSpeed() < 1f)
+                        {
+                            sage.setSpeed(.1f);
+                        }
                     }
-                }
-                if (name.equals("IncreaseEnemies"))
-                {
-                    if (enemyChance > 1)
+                    if (name.equals("DecreaseSpeed"))
                     {
-                        enemyChance--;
+                        if (sage.getSpeed() > .1f)
+                        {
+                            sage.setSpeed(-.1f);
+                        }
                     }
-                }
-                if (name.equals("DecreaseEnemies"))
-                {
-                    if (enemyChance < 100)
+                    if (name.equals("IncreaseHealth"))
                     {
-                        enemyChance++;
+                        if (sage.getHealth() < 100f)
+                        {
+                            sage.setHealth(1f);
+                        }
+                    }
+                    if (name.equals("DecreaseHealth"))
+                    {
+                        if (sage.getHealth() > 0f)
+                        {
+                            sage.setHealth(-1f);
+                        }
+                    }
+                    if (name.equals("IncreaseEnemies"))
+                    {
+                        if (enemyChance > 1)
+                        {
+                            enemyChance--;
+                        }
+                    }
+                    if (name.equals("DecreaseEnemies"))
+                    {
+                        if (enemyChance < 100)
+                        {
+                            enemyChance++;
+                        }
                     }
                 }
             }
-        }
+        };
     };
-
-    protected float getScreenWidth()
-    {
-        return this.settings.getWidth();
-    }
-
-    protected float getScreenHeight()
-    {
-        return this.settings.getHeight();
-    }
-
-    public void onAnimChange(AnimControl control, AnimChannel channel, String animName)
-    {
-    }
-
-    public void onAnimCycleDone(AnimControl control, AnimChannel channel, String animName)
-    {
-    }
-
-    @Override
-<<<<<<< HEAD
-    public void simpleUpdate(float tpf)
-    {
-        if (!gameOver && !atTitleScreen)
+            
+        protected float getScreenWidth()
         {
-=======
-     public void simpleUpdate(float tpf) 
-     {
-         if(!gameOver && !atTitleScreen)
-         {
-            if(bossTest)
+            return this.settings.getWidth();
+        }
+
+        protected float getScreenHeight()
+        {
+            return this.settings.getHeight();
+        }
+
+        public void onAnimChange(AnimControl control, AnimChannel channel, String animName)
+        {
+        }
+
+        public void onAnimCycleDone(AnimControl control, AnimChannel channel, String animName)
+        {
+        }
+
+        @Override
+        public void simpleUpdate(float tpf)
+        {
+            if (!gameOver && !atTitleScreen)
+            {
+                updateHUD();
+                updateCharacterStatus();
+                updateEnemyStatus();
+                if (sage.getHitEnemy())
+                {
+                    sage.setHitEnemy(false);
+                }
+                if (wisdomOpen)
+                {
+                    displayWisdom();
+                }
+                if (menuOpen)
+                {
+                    if (merchantOpen)
+                    {
+                        displayMerchant();
+                    } else
+                    {
+                        displayMenu();
+                    }
+                }
+            }
+            if (gameOver)
+            {
+                displayGameOver();
+            }
+            if (atTitleScreen)
+            {
+                displayTitleScreen();
+            }
+            if (bosstest && !gameOver && !atTitleScreen && !bossdead)
             {
                 bossAttack();
             }
->>>>>>> 5601ef848e070b3e69467aed26eff3dc9cdef50b
-            updateHUD();
-            updateCharacterStatus();
-            updateEnemyStatus();
-            if (sage.getHitEnemy())
+
+        }
+
+        private void bossAttack()
+        {
+            if (shottimer == 50)
             {
-                sage.setHitEnemy(false);
-            }
-            if (wisdomOpen)
-            {
-                displayWisdom();
-            }
-            if (menuOpen)
-            {
-                if (merchantOpen)
+                int bossHealth = rootNode.getChild("Boss").getUserData("health");
+                if (bossHealth > 0)
                 {
-                    displayMerchant();
+                    makeEnemy(rootNode, 0, 0);
+                    shottimer = 0;
                 } else
                 {
-                    displayMenu();
+                    bossdead = true;
+                    rootNode.getChild("Boss").removeControl(rootNode.getChild("Boss").getControl(0));
+                    rootNode.getChild("Boss").removeFromParent();
                 }
             }
+            shottimer++;
         }
-        if (gameOver)
-        {
-            displayGameOver();
-        }
-        if (atTitleScreen)
-        {
-            displayTitleScreen();
-        }
-        if (bosstest && !gameOver && !atTitleScreen && !bossdead)
-        {
-            bossAttack();
-        }
-
     }
-
-    private void bossAttack()
-    {
-        if (shottimer == 50)
-        {
-            int bossHealth = rootNode.getChild("Boss").getUserData("health");
-            if (bossHealth > 0)
-            {
-                makeEnemy(rootNode, 0, 0);
-                shottimer = 0;
-            } else
-            {
-                bossdead = true;
-                rootNode.getChild("Boss").removeControl(rootNode.getChild("Boss").getControl(0));
-                rootNode.getChild("Boss").removeFromParent();
-            }
-        }
-        shottimer++;
-    }
-}
-
