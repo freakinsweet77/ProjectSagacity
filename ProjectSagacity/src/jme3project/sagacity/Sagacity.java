@@ -104,7 +104,7 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
     private AudioNode windSound;
     private int bossCollisionIndex;
     private int shottimer = 0;
-    private boolean bosstest = true;
+    private boolean bosstest = false;
     private int tempEnemyHealth = 50;
     private boolean bossdead = false;
 
@@ -145,7 +145,10 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
             makeDefenseUp();
 
             makeEnvironment();
-            makeEnemies();
+            if(unlockEnemies)
+            {
+                makeEnemies();
+            }
             setupCamera(rootNode, 0, 750, 35);
             camera.setY(65);
             camera.setLocation(camera.getX(), camera.getY(), camera.getZ());
@@ -180,6 +183,7 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         gaveMerchant = false;
         enemyCollisionIndex = 0;
         randomEnemyCollisionIndex = 0;
+        wallCollisionIndex = 0;
         initSounds();
     }
 
@@ -288,12 +292,27 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         merchantText.setText("Spirit Merchant(L)");
         merchantText.setLocalTranslation(getScreenWidth() * (0.62f / 3.0f), getScreenHeight() * (0.70f / 3.0f), 0);
 
+        BitmapText voidText = new BitmapText(guiFont, false);
+        if(unlockEnemies)
+        {
+            
+            voidText.setSize(16);
+            voidText.setColor(ColorRGBA.LightGray);
+            voidText.setText("Enter the Void(O)");
+            voidText.setLocalTranslation(getScreenWidth() * (1.22f / 3.0f), getScreenHeight() * (0.70f / 3.0f), 0);
+        }
         guiNode.attachChild(background);
         guiNode.attachChild(border);
         guiNode.attachChild(foreground);
         guiNode.attachChild(nameText);
         guiNode.attachChild(statText);
         guiNode.attachChild(merchantText);
+        
+        if(unlockEnemies)
+        {
+            guiNode.attachChild(voidText);
+            
+        }
     }
 
     protected void displayMerchant()
@@ -912,6 +931,7 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         {
             endGameSound.playInstance();
             gameOver = true;
+            bosstest = false;
         }
         if (!gameOver && !atTitleScreen)
         {
@@ -987,7 +1007,7 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
                 } else
                 {
                     enemyMovementIndex = 0;
-                    System.out.println("Resetting index (e)...");
+                    //System.out.println("Resetting index (e)...");
                 }
 
                 if (enemyXRotation < 5 && enemyXRotation >= 0)
@@ -1046,26 +1066,28 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
             // Change background color of the display
             viewPort.setBackgroundColor(new ColorRGBA(0.7f, 0.8f, 1f, 1f));
             int numRooms = getNumRooms(minRooms, maxRooms);
-            System.out.println(numRooms);
+            //System.out.println(numRooms);
 
             // Determining the number of rooms that will be on the current floor
             rooms = new Node[numRooms];
 
             // 2400 is an arbitrary large value to avoid indexing issues
-            wallCollision = new RigidBodyControl[numRooms * 2400];
+            wallCollision = new RigidBodyControl[numRooms * 400];
             floorCollision = new RigidBodyControl[numRooms];
-            environmentCollision = new RigidBodyControl[numRooms * 2400];
-            enemyCollision = new BetterCharacterControl[numRooms * 1200];
+            environmentCollision = new RigidBodyControl[numRooms * 400];
+            enemyCollision = new BetterCharacterControl[numRooms * 200];
+            randomEnemyCollision = new BetterCharacterControl[numRooms * 200];
 
             initRooms();
             initNeighborData();
             initEnvironmentData();
         } else
         {
-            wallCollision = new RigidBodyControl[2400];
+            wallCollision = new RigidBodyControl[400];
             floorCollision = new RigidBodyControl[1];
-            environmentCollision = new RigidBodyControl[2400];
+            environmentCollision = new RigidBodyControl[400];
             enemyCollision = new BetterCharacterControl[1200];
+            randomEnemyCollision = new BetterCharacterControl[200];
         }
 
         // Initially build the room around the root node
@@ -1895,15 +1917,16 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
         inputManager.addMapping("UseDefenseUp", new KeyTrigger(KeyInput.KEY_M));
         inputManager.addMapping("OpenMenu", new KeyTrigger(KeyInput.KEY_C));
         inputManager.addMapping("OpenMerchant", new KeyTrigger(KeyInput.KEY_L));
+        inputManager.addMapping("EnterVoid", new KeyTrigger(KeyInput.KEY_O));
 
         inputManager.addMapping("PlayerAttack", new KeyTrigger(KeyInput.KEY_RCONTROL));
         inputManager.addMapping("RockAttack", new KeyTrigger(KeyInput.KEY_RSHIFT));
 
-        inputManager.addMapping("IgnoreCollision", new KeyTrigger(KeyInput.KEY_LCONTROL));
-
         inputManager.addMapping("UnlockEnemies", new KeyTrigger(KeyInput.KEY_LCONTROL));
-        inputManager.addListener(actionListener, "Zoom", "CameraReset", "IgnoreCollision", "StartGame", "UsePotion", "PlayerLeft", "PlayerUp", "PlayerRight", "PlayerDown", "OpenMenu", "UsePowerUp", "UseDefenseUp", "OpenMerchant", "PlayerAttack");
-        inputManager.addListener(analogListener, "CameraLeft", "CameraUp", "CameraRight", "CameraDown", "PlayerLeft", "PlayerUp", "PlayerRight", "PlayerDown", "IncreaseSpeed", "DecreaseSpeed", "IncreaseHealth", "DecreaseHealth");    }
+        
+        inputManager.addListener(actionListener, "Zoom", "CameraReset", "UnlockEnemies", "StartGame", "UsePotion", "PlayerLeft", "PlayerUp", "PlayerRight", "PlayerDown", "OpenMenu", "UsePowerUp", "UseDefenseUp", "OpenMerchant", "EnterVoid", "PlayerAttack");
+        inputManager.addListener(analogListener, "CameraLeft", "CameraUp", "CameraRight", "CameraDown", "PlayerLeft", "PlayerUp", "PlayerRight", "PlayerDown", "IncreaseSpeed", "DecreaseSpeed", "IncreaseHealth", "DecreaseHealth", "IncreaseEnemies", "DecreaseEnemies");    
+    }
     
     // Action listener is for actions that should only happen once in a given moment
     private ActionListener actionListener = new ActionListener()
@@ -2102,13 +2125,17 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
                 {
                     rockAttack();
                 }
-            } else if (gameOver) // yes, it is redundant - just for readability
-            {
                 if (name.equals("UnlockEnemies") && !keyPressed)
                 {
                     unlockEnemies = true;
                 }
-            } else if (gameOver) // yes, it is redundant - just for readability
+                if (name.equals("EnterVoid") && menuOpen && unlockEnemies && !keyPressed)
+                {
+                    bosstest = true;
+                    gameOver = true;
+                }
+            } 
+            else if (gameOver) // yes, it is redundant - just for readability
             {
                 if (name.equals("StartGame") && !keyPressed)
                 {
@@ -2120,6 +2147,8 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
                 }
             }
         }
+        };
+    
         // Analog listener is for consistent actions that should be able to repeat constantly
         private AnalogListener analogListener = new AnalogListener()
         {
@@ -2292,7 +2321,6 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
                 }
             }
         };
-    };
             
         protected float getScreenWidth()
         {
@@ -2356,7 +2384,7 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
 
         private void bossAttack()
         {
-            if (shottimer == 50)
+            if (shottimer == 50 && bossdead == false)
             {
                 int bossHealth = rootNode.getChild("Boss").getUserData("health");
                 if (bossHealth > 0)
@@ -2367,7 +2395,8 @@ public class Sagacity extends SimpleApplication implements AnimEventListener
                 {
                     bossdead = true;
                     rootNode.getChild("Boss").removeControl(rootNode.getChild("Boss").getControl(0));
-                    rootNode.getChild("Boss").removeFromParent();
+                    bosstest = false;
+                    gameOver = true;
                 }
             }
             shottimer++;
